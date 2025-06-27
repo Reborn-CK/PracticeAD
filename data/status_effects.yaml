@@ -1,0 +1,60 @@
+burning_01:
+  name: 燃烧
+  category: "elemental_debuff"
+  logic: "dot"
+  stacking: "refresh_duration"
+  duration: 3
+  context:
+    damage_per_round: 5
+    damage_type: "fire"
+
+poison_01:
+  name: 中毒
+  category: "physical_debuff"
+  logic: "dot"
+  stacking: "stack_intensity"
+  duration: 3
+  context:
+    damage_per_round: 5
+    damage_type: "poison"
+
+speeddown_01:
+  name: 缓慢
+  category: "magic_debuff"
+  logic: "stat_mod"
+  stacking: "refresh_duration"
+  duration: 3
+  context:
+    stat_mods:
+      speed: {multiply: 0.5}
+
+speedup_01:
+  name: 加速
+  category: "magic_buff"
+  logic: "stat_mod"
+  stacking: "refresh_duration"
+  duration: 3
+  context:
+    stat_mods:
+      speed: {add: 20}
+
+wet_01:
+  name: 潮湿
+  category: "physical_debuff"
+  logic: "stat_mod"
+  stacking: "refresh_duration"
+  duration: 3
+  context:
+    stat_mods:
+      resistance: {fire: {add: 10}}
+      resistance: {thunder: {reduce: 10}}
+
+overheal_conversion_01:
+  name: 溢疗转换
+  category: "magic_buff"
+  logic: "overheal"
+  stacking: "refresh_duration"
+  duration: 3
+  context:
+    conversion_rate: 0.5
+

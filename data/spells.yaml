@@ -1,0 +1,138 @@
+fireball_01:
+  name: 火球术
+  cost: {resource: "mana", amount: 10}
+  target: "enemy"
+  effects:
+    - type: "damage"
+      amount: 15
+      damage_type: "fire"
+    - type: "apply_status_effect"
+      status_effect_id: "burning_01"
+
+poison_cloud_01:
+  name: 毒云术
+  target: "enemy"
+  cost: {resource: "mana", amount: 10}
+  effects:
+    - type: "apply_status_effect"
+      status_effect_id: "poison_01"
+
+curse_of_slowness_01:
+  name: 迟缓诅咒
+  target: "enemy"
+  cost: {resource: "mana", amount: 10}
+  effects:
+    - type: "apply_status_effect"
+      status_effect_id: "speeddown_01"
+
+haste_01:
+  name: 加速术
+  target: "ally"
+  cost: {resource: "mana", amount: 10}
+  effects:
+    - type: "apply_status_effect"
+      status_effect_id: "speedup_01"
+
+combust_01:
+  name: 燃烬
+  cost: {resource: "mana", amount: 10}
+  target: "enemy"
+  interactions:
+    - type: "on_cast"
+      target_has_effect: "burning_01"
+      action: "consume_and_damage"
+      context:
+        damage_source: "remaining_dot_damage"
+        damage_type: "fire"
+        remove_effect_id: "burning_01"
+        message: "**燃烬引爆**: {caster_name} 的[燃烬]引爆了 {target_name} 身上的[燃烧], 造成 {damage:.1f} 点伤害！"
+
+heal_01:
+  name: 治疗术
+  cost: {resource: "mana", amount: 20}
+  target: "ally"
+  effects:
+    - type: "heal"
+      amount: 20
+      heal_type: "light"
+
+heal_02:
+  name: 溢疗术
+  cost: {resource: "mana", amount: 20}
+  target: "ally"
+  effects:
+    - type: "heal"
+      amount: 20
+      heal_type: "light"
+    - type: "overheal"
+      conversion_rate: 0.5
+
+thunderbolt_01:
+  name: 雷霆术
+  cost: {resource: "mana", amount: 100}
+  target: "enemy"
+  effects:
+    - type: "damage"
+      amount: 160
+      damage_type: "thunder"
+
+snowball_01:
+  name: 雪球术
+  cost: {resource: "mana", amount: 10}
+  target: "enemy"
+  effects:
+    - type: "damage"
+      amount: 100
+      damage_type: "ice"
+  interactions:
+    - type: "on_damage_deal"
+      target_has_effect: "burning_01"
+      action: "extinguish"
+      context:
+        damage_multiplier: 0.5
+        apply_status_effect_id: "wet_01"
+        remove_effect_id: "burning_01"
+        message: "**法术联动**: {source_spell_name} 熄灭了 {target_name} 的[燃烧], 伤害减弱并附加了[潮湿]状态！"
+
+wind_01:
+  name: 风刃术
+  cost: {resource: "mana", amount: 10}
+  target: "enemy"
+  effects:
+    - type: "damage"
+      amount: 100
+      damage_type: "wind"
+  interactions:
+    - type: "on_damage_deal"
+      target_has_effect: "burning_01"
+      action: "extend_duration"
+      context:
+        extend_duration: 2
+        message: "**法术联动**: {source_spell_name} 助长了 {target_name} 的[燃烧]效果, 持续时间延长了!"
+
+vampiric_touch_01:
+  name: 吸血术
+  cost: {resource: "mana", amount: 10}
+  target: "enemy"
+  effects:
+    - type: "damage"
+      amount: 50
+      damage_type: "blood"
+      lifesteal_ratio: 0.5
+
+blessing_stance_01:
+  name: 溢疗转换
+  cost: {resource: "mana", amount: 10}
+  target: "ally"
+  effects:
+    - type: "apply_status_effect"
+      status_effect_id: "overheal_conversion_01"
+
+purify_01:
+  name: 净化
+  cost: {resource: "mana", amount: 10}
+  target: "ally"
+  effects:
+    - type: "dispel"
+      category: "magic_debuff"
+      count: 1
