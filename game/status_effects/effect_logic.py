@@ -1,20 +1,21 @@
 from abc import ABC, abstractmethod
-from ..core.event_bus import GameEvent, EventBus
+from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
-from ..core.payloads import HealRequestPayload, StatQueryPayload, DamageRequestPayload, UIMessagePayload, GainShieldPayload
+from ..core.payloads import StatQueryPayload, HealRequestPayload, UIMessagePayload, DamageRequestPayload, GainShieldPayload
 from ..core.entity import Entity
+from .status_effect import StatusEffect
 
 class EffectLogic(ABC):
     """buff，debuff的抽象基类"""
-    def on_apply(self, target: Entity, effect: 'StatusEffect', event_bus: EventBus): pass # type: ignore
-    def on_tick(self, target: Entity, effect: 'StatusEffect', event_bus: EventBus): pass # type: ignore
-    def on_remove(self, target: Entity, effect: 'StatusEffect', event_bus: EventBus): pass # type: ignore
-    def on_stat_query(self, query: StatQueryPayload, effect: 'StatusEffect'): pass # type: ignore
-    def on_heal(self, payload: HealRequestPayload, effect: 'StatusEffect', event_bus: EventBus): pass # type: ignore
+    def on_apply(self, target: Entity, effect: StatusEffect, event_bus: EventBus): pass
+    def on_tick(self, target: Entity, effect: StatusEffect, event_bus: EventBus): pass
+    def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus): pass
+    def on_stat_query(self, query: StatQueryPayload, effect: StatusEffect): pass
+    def on_heal(self, payload: HealRequestPayload, effect: StatusEffect, event_bus: EventBus): pass
 
 class DamageOverTimeEffect(EffectLogic):
     """持续伤害效果"""
-    def on_tick(self, target: Entity, effect: 'StatusEffect', event_bus: EventBus): # type: ignore
+    def on_tick(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
         damage_per_round = effect.context.get("damage_per_round", 0)
         stacks = effect.stack_count
         total_damage = damage_per_round * stacks
@@ -34,17 +35,20 @@ class DamageOverTimeEffect(EffectLogic):
 
 class StatModificationLogic(EffectLogic):
     """属性修改效果"""
-    def on_stat_query(self, query: StatQueryPayload, effect: 'StatusEffect'): # type: ignore
+    def on_stat_query(self, query: StatQueryPayload, effect: StatusEffect):
         stat_mods = effect.context.get("stat_mods", {})
         if query.stat_name in stat_mods:
             mods = stat_mods[query.stat_name]
             query.current_value *= mods.get("multiply", 1)
             query.current_value += mods.get("add", 0)
+    
+    def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        pass
 
 class OverhealConversionLogic(EffectLogic):
     """溢疗转换效果"""
-    def on_heal(self, payload: HealRequestPayload, effect: 'StatusEffect', event_bus: EventBus): # type: ignore
-        if payload.overheal_amount > 0:
+    def on_heal(self, payload: HealRequestPayload, effect: StatusEffect, event_bus: EventBus):
+        if payload.overheal_conversion_rate is not None:
             rate = effect.context.get("conversion_rate", 0)
             shield_gain = payload.overheal_amount * rate
             if shield_gain > 0:

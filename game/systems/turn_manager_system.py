@@ -11,7 +11,7 @@ class TurnManagerSystem:
         self.round_number = 0
         self.turn_queue = []
 
-    def get_final_stat(self, entity: Entity, stat_name: str, base_value: float) -> float:
+    def get_final_stat(self, entity: 'Entity', stat_name: str, base_value: float) -> float: # type: ignore
         query = StatQueryPayload(entity, stat_name, base_value, base_value)
         self.event_bus.dispatch(GameEvent(EventName.STAT_QUERY, query))
         return query.current_value
@@ -30,5 +30,4 @@ class TurnManagerSystem:
 
         if self.turn_queue:
             acting_entity = self.turn_queue.pop(0)
-            if not acting_entity.has_component(DeadComponent): # 行动前再次检查死亡状态
-                self.event_bus.dispatch(GameEvent(EventName.ACTION_REQUEST, ActionRequestPayload(acting_entity)))
+            self.event_bus.dispatch(GameEvent(EventName.ACTION_REQUEST, ActionRequestPayload(acting_entity)))

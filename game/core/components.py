@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, TYPE_CHECKING
 from .entity import Entity
 from .event_bus import EventBus, GameEvent
+
+if TYPE_CHECKING:
+    from ..status_effects.status_effect import StatusEffect
 
 # --- 核心组件 ---
 @dataclass

@@ -33,22 +33,33 @@ class PlayerInputSystem:
         spell_data = self.data_manager.get_spell_data(spell_id)
         target_type = self.data_manager.get_spell_target_type(spell_id)
         
+        # 根据法术目标类型确定可选目标
         available_targets = []
+        target_descriptions = []
+        
         if target_type == "enemy":
-            available_targets = [e for e in self.world.entities if e.has_component(AIControlledComponent) and not e.has_component(DeadComponent)]
+            # 敌人目标：选择AI控制的实体
+            available_targets = [e for e in self.world.entities 
+                               if e.has_component(AIControlledComponent) and not e.has_component(DeadComponent)]
+            target_descriptions = [f"{e.name} (HP: {e.get_component(HealthComponent).hp:.0f}, Speed: {self._get_final_speed(e, e.get_component(SpeedComponent).speed):.0f})" 
+                                 for e in available_targets]
         elif target_type == "ally":
-            available_targets = [e for e in self.world.entities if e.has_component(PlayerControlledComponent) and not e.has_component(DeadComponent)]
-        else: # any
-             available_targets = [e for e in self.world.entities if not e.has_component(DeadComponent)]
+            # 友军目标：选择玩家控制的实体
+            available_targets = [e for e in self.world.entities 
+                               if e.has_component(PlayerControlledComponent) and not e.has_component(DeadComponent)]
+            target_descriptions = [f"{e.name} (HP: {e.get_component(HealthComponent).hp:.0f}, Speed: {self._get_final_speed(e, e.get_component(SpeedComponent).speed):.0f})" 
+                                 for e in available_targets]
+        else:
+            # 其他类型：选择所有活着的实体
+            available_targets = [e for e in self.world.entities if not e.has_component(DeadComponent)]
+            target_descriptions = [f"{e.name} (HP: {e.get_component(HealthComponent).hp:.0f}, Speed: {self._get_final_speed(e, e.get_component(SpeedComponent).speed):.0f})" 
+                                 for e in available_targets]
         
         if not available_targets:
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload("**提示**: 没有可用的目标!")))
-            # 如果没有目标，需要让回合继续，简单做法是重新请求行动
-            self.event_bus.dispatch(GameEvent(EventName.ACTION_REQUEST, ActionRequestPayload(caster)))
             return
-
-        target_descriptions = [f"{e.name} (HP: {e.get_component(HealthComponent).hp:.0f})" for e in available_targets]
         
+        # 显示目标选择
         self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
             prompt=f"选择 {spell_data['name']} 的目标:", options=target_descriptions,
             response_event_name=EventName.PLAYER_TARGET_CHOICE, 
@@ -59,5 +70,13 @@ class PlayerInputSystem:
         context = event.payload["context"]
         caster = context["caster"]
         spell_id = context["spell_id"]
-        target = context["available_targets"][event.payload["choice_index"]]
+        available_targets = context["available_targets"]
+        target = available_targets[event.payload["choice_index"]]
+        
         self.event_bus.dispatch(GameEvent(EventName.CAST_SPELL_REQUEST, CastSpellRequestPayload(caster, target, spell_id)))
+    
+    def _get_final_speed(self, entity: 'Entity', base_speed: float) -> float: # type: ignore
+        """获取考虑了状态效果后的最终速度值"""
+        query = StatQueryPayload(entity=entity, stat_name="speed", base_value=base_speed, current_value=base_speed)
+        self.event_bus.dispatch(GameEvent(EventName.STAT_QUERY, query))
+        return query.current_value

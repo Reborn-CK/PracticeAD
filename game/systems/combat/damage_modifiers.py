@@ -23,31 +23,27 @@ class DamageResolutionContext:
 class DamageModifier(ABC):
     """伤害修改器的抽象基类"""
     @abstractmethod
-    def process(self, context: DamageResolutionContext, event_bus: EventBus):
+    def process(self, context: 'DamageResolutionContext', event_bus: EventBus):
         pass
 
 class DefenseHandler(DamageModifier):
     """处理护盾吸收"""
-    def process(self, context: DamageResolutionContext, event_bus: EventBus):
+    def process(self, context: 'DamageResolutionContext', event_bus: EventBus):
         if defense_comp := context.target.get_component(DefenseComponent):
             if defense_comp.defense_value > 0:
                 blocked = min(context.current_damage, defense_comp.defense_value)
-                event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                    "COMBAT", f"护盾抵消了 {blocked:.1f} 点伤害")))
+                event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"护盾抵消了 {blocked:.1f} 点伤害")))
                 context.current_damage -= blocked
                 defense_comp.defense_value -= blocked
 
 class ResistanceHandler(DamageModifier):
     """处理属性抗性"""
-    def process(self, context: DamageResolutionContext, event_bus: EventBus):
+    def process(self, context: 'DamageResolutionContext', event_bus: EventBus):
         if resistance_comp := context.target.get_component(ResistanceComponent):
-            # 注意：抗性通常是百分比减免，这里假设1.0为无抗性，0.5为50%减伤
-            resistance_multiplier = resistance_comp.resistances.get(context.damage_type, 1.0)
-            if resistance_multiplier < 1.0:
-                reduced_amount = context.current_damage * (1 - resistance_multiplier)
-                event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                    "COMBAT", f"{context.damage_type.capitalize()}抗性抵抗了 {reduced_amount:.1f} 点伤害")))
-                context.current_damage *= resistance_multiplier
+            if resistance_comp.resistances.get(context.damage_type, 1) < 1:
+                resistance_value = resistance_comp.resistances.get(context.damage_type, 1)
+                event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"当前伤害{context.current_damage:.1f}, {context.damage_type}抗性抵抗了 {context.current_damage * resistance_value} 点伤害")))
+                context.current_damage *= resistance_value
 
 @dataclass
 class HealResolutionContext:

@@ -6,7 +6,7 @@ from .core.entity import Entity
 class World:
     def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
-        self.entities: List[Entity] = []
+        self.entities = []
         self.systems: List[tuple[int, Any]] = []
         self.is_running = False
 

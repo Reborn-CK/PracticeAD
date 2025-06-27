@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Optional
-from ..core.entity import Entity
-from .effect_logic import EffectLogic
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..core.entity import Entity
+    from .effect_logic import EffectLogic
 
 @dataclass
 class StatusEffect:
@@ -13,6 +15,6 @@ class StatusEffect:
     stacking: str = "refresh_duration"
     max_stacks: int = 1
     stack_count: int = 1
-    caster: Optional[Entity] = None
+    caster: Optional['Entity'] = None # type: ignore
     context: dict = field(default_factory=dict)
-    logic: EffectLogic = field(default_factory=lambda: EffectLogic())
+    logic: Optional['EffectLogic'] = None # type: ignore
