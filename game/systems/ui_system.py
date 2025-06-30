@@ -45,7 +45,24 @@ class UISystem:
                 # debuff,buff显示
                 status_effects_str = ""
                 if (container := entity.get_component(StatusEffectContainerComponent)) and container.effects:
-                    effects_list = [f"{e.name} ({e.duration}回合)" for e in container.effects]
+                    effects_list = []
+                    
+                    # 特殊处理中毒效果 - 显示多个中毒状态
+                    poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+                    if poison_effects:
+                        poison_str = f"中毒 x{len(poison_effects)}个"
+                        for i, poison_effect in enumerate(poison_effects, 1):
+                            poison_str += f"({poison_effect.stack_count}层)"
+                        effects_list.append(poison_str)
+                    
+                    # 处理其他效果
+                    other_effects = [e for e in container.effects if e.effect_id != "poison_01"]
+                    for e in other_effects:
+                        if e.stacking == "stack_intensity":
+                            effects_list.append(f"{e.name} x{e.stack_count} ({e.duration}回合)")
+                        else:
+                            effects_list.append(f"{e.name} ({e.duration}回合)")
+                    
                     status_effects_str = f" | 状态: " + ", ".join(effects_list)
 
                 # 构建状态字符串，过滤空值

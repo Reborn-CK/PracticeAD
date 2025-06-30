@@ -4,7 +4,8 @@ from typing import Optional
 from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import (CastSpellRequestPayload, DamageRequestPayload, RemoveStatusEffectRequestPayload,
-                             UpdateStatusEffectsDurationRequestPayload, ApplyStatusEffectRequestPayload, UIMessagePayload)
+                             UpdateStatusEffectsDurationRequestPayload, ApplyStatusEffectRequestPayload, UIMessagePayload,
+                             LogRequestPayload)
 from ..core.entity import Entity
 from ..core.components import StatusEffectContainerComponent
 
@@ -81,6 +82,9 @@ class InteractionSystem:
                 damage = dot_damage * remaining_duration
             
             if damage > 0:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                    "[Interaction]", f"[法术联动] {self.data_manager.get_spell_data(source_spell_id).get('name', '燃烬引爆')} 消耗 {target_effect.effect_id} 造成 {damage:.1f} 伤害"
+                )))
                 #派发伤害
                 self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                     caster=caster, 
@@ -88,7 +92,7 @@ class InteractionSystem:
                     source_spell_id=source_spell_id, 
                     source_spell_name=self.data_manager.get_spell_data(source_spell_id).get('name', '燃烬引爆'),
                     base_damage=damage, 
-                    damage_type=context.get("damage_type", "pure")
+                    damage_type=context.get("damage_type", "unknown"),
                 )))
                 # 移除被消耗的效果
                 self.event_bus.dispatch(GameEvent(EventName.REMOVE_STATUS_EFFECT_REQUEST,RemoveStatusEffectRequestPayload(
@@ -97,8 +101,15 @@ class InteractionSystem:
 
         elif action == "extinguish":
             if damage_payload:
+                original_damage = damage_payload.original_base_damage or damage_payload.base_damage
                 damage_payload.base_damage *= context.get("damage_multiplier", 1)
-            
+                new_damage = damage_payload.base_damage
+                
+                # 添加伤害减半的log提示
+                if context.get("damage_multiplier", 1) != 1:
+                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                       "[Interaction]", f"[法术联动] {damage_payload.source_spell_name} 原始伤害 {original_damage:.1f}，因交互减半为 {new_damage:.1f}"
+                    )))
             if (remove_id := context.get("remove_effect_id")):
                 self.event_bus.dispatch(GameEvent(EventName.REMOVE_STATUS_EFFECT_REQUEST,RemoveStatusEffectRequestPayload(
                     target=target, 
@@ -106,17 +117,6 @@ class InteractionSystem:
                 )))
             if (apply_id := context.get("apply_status_effect_id")):
                 new_effect = self.status_effect_factory.create_effect(apply_id, caster)
-                #effect_data = self.data_manager.get_status_effect_data(apply_id)
-                # if effect_data:
-                #     logic_class =  EFFECT_LOGIC_MAP.get(effect_data.get("logic", ""), EffectLogic)
-                #     new_effect = StatusEffect(
-                #         effect_id=apply_id,
-                #         name= effect_data["name"],
-                #         duration=effect_data["duration"],
-                #         caster=caster,
-                #         context=effect_data.get("context", {}),
-                #         logic=logic_class()
-                #     )
                 if new_effect:
                     self.event_bus.dispatch(GameEvent(EventName.APPLY_STATUS_EFFECT_REQUEST, ApplyStatusEffectRequestPayload(
                         target=target,
@@ -130,13 +130,13 @@ class InteractionSystem:
                     effect_id=target_effect.effect_id, 
                     change=change
                 )))
-        
+
         if (message_template := context.get("message")):
             spell_name = self.data_manager.get_spell_data(source_spell_id).get("name") if source_spell_id else "法术联动"
             formatted_message = message_template.format(
                 caster_name=caster.name,
+                source_spell_name=spell_name,
                 target_name=target.name,
-                spell_name=spell_name,
-                damage= damage if 'damage' in locals() else 0
+                damage=damage_payload.base_damage if damage_payload else 0
             )
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(formatted_message)))

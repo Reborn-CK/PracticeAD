@@ -51,6 +51,7 @@ class DamageRequestPayload:
     source_spell_name: str
     base_damage: float
     damage_type: str
+    original_base_damage: Optional[float] = None
     lifesteal_ratio: Optional[float] = None
     is_reflection: bool = False
 

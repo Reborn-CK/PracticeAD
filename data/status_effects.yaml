@@ -11,9 +11,12 @@ burning_01:
 poison_01:
   name: 中毒
   category: "physical_debuff"
-  logic: "dot"
+  logic: "poison_dot"
   stacking: "stack_intensity"
-  duration: 3
+  stack_count: 0
+  stack_intensity: 3
+  poison_number: 5
+  max_stacks: 10
   context:
     damage_per_round: 5
     damage_type: "poison"

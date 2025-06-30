@@ -58,3 +58,26 @@ class OverhealConversionLogic(EffectLogic):
                 event_bus.dispatch(GameEvent(EventName.GAIN_SHIELD_REQUEST, GainShieldPayload(
                     target=payload.target, source=effect.name, amount=shield_gain
                 )))
+
+class PoisonDotEffect(EffectLogic):
+    """中毒持续伤害效果 - 基于状态数量，结算后层数减1"""
+    def on_tick(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        # 伤害计算：基础伤害 × 1（与层数无关，只与状态数量相关）
+        damage_per_round = effect.context.get("damage_per_round", 0)
+        total_damage = damage_per_round  # 每个中毒状态造成基础伤害，与层数无关
+        if total_damage > 0:
+            event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**持续伤害**: {target.name} 因[{effect.name}] 受到了 {total_damage:.1f} 点伤害"
+            )))
+            event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
+                caster=effect.caster or target,
+                target=target,
+                source_spell_id=effect.effect_id,
+                source_spell_name=effect.name,
+                base_damage=total_damage,
+                damage_type=effect.context.get("damage_type", "pure"),
+                is_reflection=False
+            )))
+    
+    def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        pass

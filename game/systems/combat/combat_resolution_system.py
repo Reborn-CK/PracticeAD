@@ -14,6 +14,7 @@ from .heal_modifiers import HealModifier, GrievousWoundsHandler
 # 依赖的系统和数据管理器
 from ..data_manager import DataManager
 from ..passive_ability_system import PassiveAbilitySystem
+from ...core.entity import Entity
 
 @dataclass
 class DamageResolutionContext: 
@@ -52,6 +53,11 @@ class CombatResolutionSystem:
                 health_comp.hp -= payload.base_damage
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"反射伤害: {payload.caster.name} 受到了 {payload.base_damage:.1f} 点伤害")))
             return
+        
+        # 获取原始伤害和当前伤害
+        original_damage = payload.original_base_damage or payload.base_damage
+        current_damage = payload.base_damage
+        
         context = DamageResolutionContext(
             caster=payload.caster, 
             target=payload.target, 
@@ -60,7 +66,12 @@ class CombatResolutionSystem:
             current_damage=payload.base_damage,
             log=[]
         )
-        self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"基础伤害: {context.current_damage:.1f}")))
+        
+        # 如果原始伤害和当前伤害不同，说明有交互修改
+        if abs(original_damage - current_damage) > 0.1:
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"原始伤害: {original_damage:.1f}，交互后基础伤害: {current_damage:.1f}")))
+        else:
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"基础伤害: {context.current_damage:.1f}")))
         
         # 记录护盾抵消的伤害
         shield_blocked = 0.0

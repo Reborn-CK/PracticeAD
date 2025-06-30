@@ -100,7 +100,7 @@ def main():
     enemy.add_component(SpeedComponent(speed=50))
     enemy.add_component(ThornsComponent(thorns_percentage=0.5))
     enemy.add_component(StatusEffectContainerComponent())
-    enemy.add_component(SpellListComponent(spells=["fireball_01"]))
+    enemy.add_component(SpellListComponent(spells=["curse_of_slowness_01"]))
 
     # 4. 启动游戏世界
     print("开始游戏...")

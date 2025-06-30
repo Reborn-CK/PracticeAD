@@ -65,6 +65,7 @@ class SpellCastSystem:
                     source_spell_id=payload.spell_id,
                     source_spell_name=spell_data["name"],
                     base_damage=effect["amount"], 
+                    original_base_damage=effect["amount"],
                     damage_type=effect["damage_type"],
                     lifesteal_ratio=lifesteal_ratio
                 )))
