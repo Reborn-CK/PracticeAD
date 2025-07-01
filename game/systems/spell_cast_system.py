@@ -2,7 +2,8 @@ from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import (CastSpellRequestPayload, ManaCostRequestPayload, DamageRequestPayload,
                              HealRequestPayload, ApplyStatusEffectRequestPayload, DispelRequestPayload,
-                             LogRequestPayload, UIMessagePayload)
+                             LogRequestPayload, UIMessagePayload, AmplifyPoisonRequestPayload,
+                             DetonatePoisonRequestPayload)
 from .data_manager import DataManager
 from ..status_effects.status_effect_factory import StatusEffectFactory
 from ..status_effects.status_effect import StatusEffect
@@ -113,5 +114,23 @@ class SpellCastSystem:
                     target=payload.target,
                     category_to_dispel=effect.get("category", "uncategorized"),
                     count=effect.get("count")
+                )))
+            elif effect_type == "amplify_poison":
+                stacks_to_add = effect.get("stacks_to_add", 2)
+                self.event_bus.dispatch(GameEvent(EventName.AMPLIFY_POISON_REQUEST, AmplifyPoisonRequestPayload(
+                    target=payload.target,
+                    stacks_to_add=stacks_to_add,
+                    caster=payload.caster,
+                    source_spell_id=payload.spell_id,
+                    source_spell_name=spell_data["name"]
+                )))
+            elif effect_type == "detonate_poison":
+                damage_multiplier = effect.get("damage_multiplier", 1.0)
+                self.event_bus.dispatch(GameEvent(EventName.DETONATE_POISON_REQUEST, DetonatePoisonRequestPayload(
+                    target=payload.target,
+                    damage_multiplier=damage_multiplier,
+                    caster=payload.caster,
+                    source_spell_id=payload.spell_id,
+                    source_spell_name=spell_data["name"]
                 )))
             # 可以在这里添加更多效果类型的处理

@@ -2,7 +2,8 @@ from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import (ApplyStatusEffectRequestPayload, RemoveStatusEffectRequestPayload,
                              UpdateStatusEffectsDurationRequestPayload, DispelRequestPayload,
-                             StatQueryPayload, LogRequestPayload, UIMessagePayload, DamageRequestPayload)
+                             StatQueryPayload, LogRequestPayload, UIMessagePayload, DamageRequestPayload,
+                             AmplifyPoisonRequestPayload, DetonatePoisonRequestPayload)
 from ..core.components import StatusEffectContainerComponent, DeadComponent
 from ..status_effects.status_effect import StatusEffect
 
@@ -17,6 +18,8 @@ class StatusEffectSystem:
         self.event_bus.subscribe(EventName.UPDATE_STATUS_EFFECTS_DURATION_REQUEST, self.on_update_effects_duration)
         self.event_bus.subscribe(EventName.DISPEL_REQUEST, self.on_dispel_effect)
         self.event_bus.subscribe(EventName.STAT_QUERY, self.on_stat_query)
+        self.event_bus.subscribe(EventName.AMPLIFY_POISON_REQUEST, self.on_amplify_poison)
+        self.event_bus.subscribe(EventName.DETONATE_POISON_REQUEST, self.on_detonate_poison)
     
     def on_apply_effect(self, event: GameEvent):
         payload: ApplyStatusEffectRequestPayload = event.payload
@@ -197,3 +200,71 @@ class StatusEffectSystem:
         
         # 状态结算完毕，发出通知
         self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED))
+
+    def on_amplify_poison(self, event: GameEvent):
+        payload: AmplifyPoisonRequestPayload = event.payload
+        target = payload.target
+        container = target.get_component(StatusEffectContainerComponent)
+        if not container: return
+        
+        poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+        if not poison_effects:
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**法术效果**: {payload.source_spell_name} 对 {target.name} 无效，目标没有中毒状态")))
+            return
+        
+        total_stacks_added = 0
+        for effect in poison_effects:
+            old_stack_count = effect.stack_count
+            effect.stack_count = min(effect.stack_count + payload.stacks_to_add, effect.max_stacks)
+            stacks_added = effect.stack_count - old_stack_count
+            total_stacks_added += stacks_added
+        
+        self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+            f"**法术效果**: {payload.source_spell_name} 为 {target.name} 的 {len(poison_effects)} 个中毒状态各增加了 {payload.stacks_to_add} 层，总共增加了 {total_stacks_added} 层"
+        )))
+
+    def on_detonate_poison(self, event: GameEvent):
+        payload: DetonatePoisonRequestPayload = event.payload
+        target = payload.target
+        container = target.get_component(StatusEffectContainerComponent)
+        if not container: return
+        
+        poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+        if not poison_effects:
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**法术效果**: {payload.source_spell_name} 对 {target.name} 无效，目标没有中毒状态")))
+            return
+        
+        # 计算总伤害：每个中毒状态造成基础伤害 × 伤害倍率
+        total_damage = 0
+        total_stacks = 0
+        for effect in poison_effects:
+            damage_per_round = effect.context.get("damage_per_round", 0)
+            total_damage += damage_per_round * payload.damage_multiplier
+            total_stacks += effect.stack_count
+        
+        # 播报伤害信息，包含中毒状态数量和总层数
+        if total_damage > 0:
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**法术效果**: {payload.source_spell_name} 引爆了 {target.name} 的 {len(poison_effects)} 个中毒状态（共{total_stacks}层），造成 {total_damage:.1f} 点伤害！"
+            )))
+            
+            # 派发伤害事件，不计算反伤
+            self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
+                caster=payload.caster,
+                target=target,
+                source_spell_id=payload.source_spell_id,
+                source_spell_name=payload.source_spell_name,
+                base_damage=total_damage,
+                damage_type="poison",
+                is_reflection=False
+            )))
+        
+        # 移除所有中毒状态
+        for effect in poison_effects:
+            effect.logic.on_remove(target, effect, self.event_bus)
+            container.effects.remove(effect)
+        
+        # 播报移除信息
+        self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+            f"**状态效果**: {target.name} 的所有中毒状态已被引爆并移除"
+        )))

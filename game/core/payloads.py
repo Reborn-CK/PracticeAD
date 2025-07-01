@@ -125,3 +125,19 @@ class DispelRequestPayload:
     target: Entity
     category_to_dispel: str
     count: int
+
+@dataclass
+class AmplifyPoisonRequestPayload:
+    target: Entity
+    stacks_to_add: int
+    caster: Entity
+    source_spell_id: str
+    source_spell_name: str
+
+@dataclass
+class DetonatePoisonRequestPayload:
+    target: Entity
+    damage_multiplier: float
+    caster: Entity
+    source_spell_id: str
+    source_spell_name: str

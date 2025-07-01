@@ -3,6 +3,7 @@ from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import LogRequestPayload
 from ...core.components import GrievousWoundsComponent
+from .damage_modifiers import HealResolutionContext
 
 class HealModifier(ABC):
     @abstractmethod

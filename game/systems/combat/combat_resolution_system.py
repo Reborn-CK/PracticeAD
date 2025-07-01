@@ -94,12 +94,12 @@ class CombatResolutionSystem:
             health_comp.hp -= final_damage
 
             # --- 新增：反伤处理逻辑 ---
-            if final_damage > 0 and (thorns_comp := payload.target.get_component(ThornsComponent)):
+            if final_damage > 0 and payload.is_reflection and (thorns_comp := payload.target.get_component(ThornsComponent)):
                 reflection_damage = final_damage * thorns_comp.thorns_percentage
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[PASSIVE]", f"{payload.target.name} 的反伤对 {payload.caster.name} 造成了 {reflection_damage:.1f} 点伤害")))
                 self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                     caster=payload.caster, 
-                    target=payload.target, 
+                    target=payload.target,
                     source_spell_id=payload.source_spell_id,
                     source_spell_name=payload.source_spell_name,
                     base_damage=reflection_damage, 

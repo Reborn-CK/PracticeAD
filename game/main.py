@@ -89,7 +89,9 @@ def main():
         "poison_cloud_01",
         "curse_of_slowness_01",
         "haste_01",
-        "purify_01"
+        "purify_01",
+        "poison_amplify_01",
+        "poison_detonate_01"
     ]))
 
     enemy = world.add_entity(Entity("BOSS"))

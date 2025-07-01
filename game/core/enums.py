@@ -24,3 +24,5 @@ class EventName(Enum):
 
     STAT_QUERY = auto()
     DISPEL_REQUEST = auto()
+    AMPLIFY_POISON_REQUEST = auto()
+    DETONATE_POISON_REQUEST = auto()

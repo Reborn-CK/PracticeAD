@@ -136,3 +136,19 @@ purify_01:
     - type: "dispel"
       category: "magic_debuff"
       count: 1
+
+poison_amplify_01:
+  name: 毒液强化
+  cost: {resource: "mana", amount: 15}
+  target: "enemy"
+  effects:
+    - type: "amplify_poison"
+      stacks_to_add: 2
+
+poison_detonate_01:
+  name: 毒爆术
+  cost: {resource: "mana", amount: 25}
+  target: "enemy"
+  effects:
+    - type: "detonate_poison"
+      damage_multiplier: 2.0
