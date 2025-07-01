@@ -143,7 +143,7 @@ poison_amplify_01:
   target: "enemy"
   effects:
     - type: "amplify_poison"
-      stacks_to_add: 2
+      amplify_amount: 2
 
 poison_detonate_01:
   name: 毒爆术

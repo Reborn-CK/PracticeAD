@@ -30,69 +30,65 @@ class StatusEffectSystem:
         if not container:
             container = target.add_component(StatusEffectContainerComponent())
         
-        # 特殊处理中毒效果 - 可以存在多个独立的中毒状态
+        # 特殊处理中毒效果
         if effect.effect_id == "poison_01":
-            # 检查是否达到最大中毒状态数量（10个）
-            existing_poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
-            poison_number = effect.poison_number  # 一次性添加的中毒状态数量
-            
-            if len(existing_poison_effects) >= 10:
-                # 如果已经有10个中毒状态，找到层数最低的一个进行叠加
-                min_stack_effect = min(existing_poison_effects, key=lambda e: e.stack_count)
-                old_stack_count = min_stack_effect.stack_count
-                min_stack_effect.stack_count = min(min_stack_effect.stack_count + effect.stack_intensity, effect.max_stacks)
-                added_stacks = min_stack_effect.stack_count - old_stack_count
-                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {target.name} 的 {effect.name} 效果增加了 {added_stacks} 层，现在总共 {min_stack_effect.stack_count} 层")))
-            else:
-                # 添加新的中毒状态，根据poison_number决定添加几个
-                added_count = 0
-                for i in range(poison_number):
-                    if len(existing_poison_effects) + added_count >= 10:
-                        break  # 达到最大数量限制
-                    
-                    # 创建新的中毒状态
-                    new_poison_effect = StatusEffect(
-                        effect_id=effect.effect_id,
-                        name=effect.name,
-                        duration=effect.duration,
-                        category=effect.category,
-                        stacking=effect.stacking,
-                        max_stacks=effect.max_stacks,
-                        stack_count=effect.stack_count,
-                        stack_intensity=effect.stack_intensity,
-                        poison_number=effect.poison_number,
-                        caster=effect.caster,
-                        context=effect.context,
-                        logic=effect.logic
-                    )
-                    
-                    container.effects.append(new_poison_effect)
-                    new_poison_effect.logic.on_apply(target, new_poison_effect, self.event_bus)
-                    added_count += 1
-                
-                total_poison_effects = len([e for e in container.effects if e.effect_id == "poison_01"])
-                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {target.name} 获得了 {added_count} 个 {effect.name} 效果，每个 x{effect.stack_count} 层，现在共有 {total_poison_effects} 个中毒状态")))
+            self._apply_poison_effect(target, effect, container)
         else:
-            # 其他效果的原有逻辑
-            existing_effect = next((e for e in container.effects if e.effect_id == effect.effect_id), None)
-            if existing_effect:
-                if effect.stacking == "refresh_duration":
-                    existing_effect.duration = max(existing_effect.duration, effect.duration)
-                    self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {target.name} 的 {effect.name} 效果持续时间刷新为 {existing_effect.duration} 回合")))
-                elif effect.stacking == "stack_intensity":
-                    old_stack_count = existing_effect.stack_count
-                    existing_effect.stack_count = min(existing_effect.stack_count + effect.stack_intensity, effect.max_stacks)
-                    existing_effect.duration = effect.duration
-                    added_stacks = existing_effect.stack_count - old_stack_count
-                    self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {target.name} 的 {effect.name} 效果增加了 {added_stacks} 层，现在总共 {existing_effect.stack_count} 层，持续时间刷新为 {existing_effect.duration} 回合")))
-                
-            else:
-                container.effects.append(effect)
-                effect.logic.on_apply(target, effect, self.event_bus)
-                if effect.stacking == "stack_intensity":
-                    self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {target.name} 获得了 {effect.name} 效果 x{effect.stack_count} 层")))
-                else:
-                    self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {target.name} 获得了 {effect.name} 效果")))
+            self._apply_normal_effect(target, effect, container)
+    
+    def _apply_poison_effect(self, target, effect, container):
+        """应用中毒效果的特殊逻辑"""
+        existing_poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+        
+        # 使用PoisonEffectLogic处理中毒效果的应用
+        poison_logic = effect.logic
+        if hasattr(poison_logic, 'apply_poison_effects'):
+            added_count = poison_logic.apply_poison_effects(target, effect, existing_poison_effects, self.event_bus)
+            
+            # 创建并添加新的中毒状态
+            for i in range(added_count):
+                new_poison_effect = StatusEffect(
+                    effect_id=effect.effect_id,
+                    name=effect.name,
+                    duration=effect.duration,
+                    category=effect.category,
+                    stacking=effect.stacking,
+                    max_stacks=effect.max_stacks,
+                    stack_count=effect.stack_count,
+                    stack_intensity=effect.stack_intensity,
+                    poison_number=effect.poison_number,
+                    caster=effect.caster,
+                    context=effect.context,
+                    logic=effect.logic
+                )
+                container.effects.append(new_poison_effect)
+                new_poison_effect.logic.on_apply(target, new_poison_effect, self.event_bus)
+        else:
+            # 回退到默认逻辑
+            self._apply_normal_effect(target, effect, container)
+    
+    def _apply_normal_effect(self, target, effect, container):
+        """应用普通效果的标准逻辑"""
+        existing_effect = next((e for e in container.effects if e.effect_id == effect.effect_id), None)
+        
+        if existing_effect:
+            # 尝试堆叠
+            if effect.logic.handle_stacking(target, existing_effect, effect, self.event_bus):
+                return  # 堆叠成功，不需要创建新效果
+        
+        # 创建新效果
+        container.effects.append(effect)
+        effect.logic.on_apply(target, effect, self.event_bus)
+        
+        # 显示应用消息
+        if effect.stacking == "stack_intensity":
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**状态效果**: {target.name} 获得了 {effect.name} 效果 x{effect.stack_count} 层"
+            )))
+        else:
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**状态效果**: {target.name} 获得了 {effect.name} 效果"
+            )))
     
     def on_dispel_effect(self, event: GameEvent):
         payload: DispelRequestPayload = event.payload
@@ -143,128 +139,113 @@ class StatusEffectSystem:
             # 特殊处理中毒效果
             poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
             if poison_effects:
-                # 计算总伤害：每个中毒状态造成基础伤害，与层数无关
-                total_damage = 0
-                for poison_effect in poison_effects:
-                    damage_per_round = poison_effect.context.get("damage_per_round", 0)
-                    total_damage += damage_per_round
-                
-                # 一次性播报所有中毒伤害
-                if total_damage > 0:
-                    self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                        f"**持续伤害**: {entity.name} 因[{len(poison_effects)}个中毒状态] 受到了 {total_damage:.1f} 点伤害"
-                    )))
-                    self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
-                        caster=poison_effects[0].caster or entity,
-                        target=entity,
-                        source_spell_id="poison_01",
-                        source_spell_name="中毒",
-                        base_damage=total_damage,
-                        damage_type="poison",
-                        is_reflection=False
-                    )))
-                
-                # 中毒层数减1
-                for poison_effect in poison_effects:
-                    poison_effect.stack_count -= 1
-                
-                # 移除层数归0的中毒
-                expired_poison_effects = [e for e in poison_effects if e.stack_count <= 0]
-                for expired_effect in expired_poison_effects:
-                    expired_effect.logic.on_remove(entity, expired_effect, self.event_bus)
-                    container.effects.remove(expired_effect)
-                
-                # 一次性播报移除信息
-                if expired_poison_effects:
-                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] {len(expired_poison_effects)} 个中毒状态层数归0，已移除")))
-                    self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {entity.name} 的 {len(expired_poison_effects)} 个中毒状态层数归0，已移除")))
-                
-                # 播报剩余中毒状态信息
-                remaining_poison_effects = [e for e in poison_effects if e.stack_count > 0]
-                if remaining_poison_effects:
-                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] 剩余 {len(remaining_poison_effects)} 个中毒状态")))
+                self._tick_poison_effects(entity, poison_effects, container)
 
-            # 处理其他效果（保持原有逻辑）
+            # 处理其他效果
             other_effects = [e for e in container.effects if e.effect_id != "poison_01"]
-            for effect in list(other_effects):
-                effect.logic.on_tick(entity, effect, self.event_bus)
-                effect.duration -= 1
-
-            # 移除已过期的其他状态效果
-            expired_effects = [e for e in other_effects if e.duration <= 0]
-            for expired_effect in expired_effects:
+            self._tick_normal_effects(entity, other_effects, container)
+    
+    def _tick_poison_effects(self, entity, poison_effects, container):
+        """结算中毒效果"""
+        if not poison_effects:
+            return
+            
+        # 使用PoisonEffectLogic处理中毒效果的结算
+        poison_logic = poison_effects[0].logic
+        if hasattr(poison_logic, 'tick_poison_effects'):
+            expired_poison_effects = poison_logic.tick_poison_effects(entity, poison_effects, self.event_bus)
+            
+            # 移除层数归0的中毒效果
+            for expired_effect in expired_poison_effects:
                 expired_effect.logic.on_remove(entity, expired_effect, self.event_bus)
                 container.effects.remove(expired_effect)
-                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] 状态效果 {expired_effect.name} 效果已过期")))
-                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {entity.name} 的 {expired_effect.name} 效果已结束")))
-        
-        # 状态结算完毕，发出通知
-        self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED))
+            
+            # 一次性播报移除信息
+            if expired_poison_effects:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] {len(expired_poison_effects)} 个中毒状态层数归0，已移除")))
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {entity.name} 的 {len(expired_poison_effects)} 个中毒状态层数归0，已移除")))
+            
+            # 播报剩余中毒状态信息
+            remaining_poison_effects = [e for e in poison_effects if e.stack_count > 0]
+            if remaining_poison_effects:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] 剩余 {len(remaining_poison_effects)} 个中毒状态")))
+        else:
+            # 回退到默认逻辑
+            for effect in poison_effects:
+                effect.logic.on_tick(entity, effect, self.event_bus)
+    
+    def _tick_normal_effects(self, entity, effects, container):
+        """结算普通效果"""
+        for effect in list(effects):
+            effect.logic.on_tick(entity, effect, self.event_bus)
+            effect.duration -= 1
 
+        # 移除已过期的状态效果
+        expired_effects = [e for e in effects if e.duration <= 0]
+        for expired_effect in expired_effects:
+            expired_effect.logic.on_remove(entity, expired_effect, self.event_bus)
+            container.effects.remove(expired_effect)
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] 状态效果 {expired_effect.name} 效果已过期")))
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {entity.name} 的 {expired_effect.name} 效果已结束")))
+    
     def on_amplify_poison(self, event: GameEvent):
         payload: AmplifyPoisonRequestPayload = event.payload
-        target = payload.target
-        container = target.get_component(StatusEffectContainerComponent)
+        container = payload.target.get_component(StatusEffectContainerComponent)
         if not container: return
         
         poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
-        if not poison_effects:
-            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**法术效果**: {payload.source_spell_name} 对 {target.name} 无效，目标没有中毒状态")))
-            return
+        if not poison_effects: return
         
-        total_stacks_added = 0
-        for effect in poison_effects:
-            old_stack_count = effect.stack_count
-            effect.stack_count = min(effect.stack_count + payload.stacks_to_add, effect.max_stacks)
-            stacks_added = effect.stack_count - old_stack_count
-            total_stacks_added += stacks_added
+        # 所有层增加
+        for poison_effect in poison_effects:
+            poison_effect.logic.handle_stacking(payload.target, poison_effect, payload.amplify_amount, self.event_bus)
+        added_stacks = len(poison_effects) * payload.amplify_amount
+        total_stack_count = 0
+        for poison_effect in poison_effects:
+            total_stack_count += poison_effect.stack_count
+
+        # min_stack_effect = min(poison_effects, key=lambda e: e.stack_count)
+        # old_stack_count = min_stack_effect.stack_count
+        # min_stack_effect.stack_count = min(min_stack_effect.stack_count + payload.amplify_amount, min_stack_effect.max_stacks)
+        # added_stacks = min_stack_effect.stack_count - old_stack_count
         
         self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-            f"**法术效果**: {payload.source_spell_name} 为 {target.name} 的 {len(poison_effects)} 个中毒状态各增加了 {payload.stacks_to_add} 层，总共增加了 {total_stacks_added} 层"
+            f"**中毒增强**: {payload.target.name} 的中毒效果增强了 {added_stacks} 层，现在总共 {total_stack_count} 层"
         )))
-
+    
     def on_detonate_poison(self, event: GameEvent):
         payload: DetonatePoisonRequestPayload = event.payload
-        target = payload.target
-        container = target.get_component(StatusEffectContainerComponent)
+        container = payload.target.get_component(StatusEffectContainerComponent)
         if not container: return
         
         poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
-        if not poison_effects:
-            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**法术效果**: {payload.source_spell_name} 对 {target.name} 无效，目标没有中毒状态")))
-            return
+        if not poison_effects: return
         
-        # 计算总伤害：每个中毒状态造成基础伤害 × 伤害倍率
+        # 计算总伤害：每个中毒状态造成基础伤害 × 层数
         total_damage = 0
-        total_stacks = 0
-        for effect in poison_effects:
-            damage_per_round = effect.context.get("damage_per_round", 0)
-            total_damage += damage_per_round * payload.damage_multiplier
-            total_stacks += effect.stack_count
+        for poison_effect in poison_effects:
+            damage_per_round = poison_effect.context.get("damage_per_round", 0)
+            total_damage += damage_per_round * poison_effect.stack_count
         
-        # 播报伤害信息，包含中毒状态数量和总层数
         if total_damage > 0:
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                f"**法术效果**: {payload.source_spell_name} 引爆了 {target.name} 的 {len(poison_effects)} 个中毒状态（共{total_stacks}层），造成 {total_damage:.1f} 点伤害！"
+                f"**中毒引爆**: {payload.target.name} 因[{len(poison_effects)}个中毒状态] 受到了 {total_damage:.1f} 点伤害"
             )))
-            
-            # 派发伤害事件，不计算反伤
             self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
-                caster=payload.caster,
-                target=target,
-                source_spell_id=payload.source_spell_id,
-                source_spell_name=payload.source_spell_name,
+                caster=payload.caster or payload.target,
+                target=payload.target,
+                source_spell_id="poison_detonate",
+                source_spell_name="中毒引爆",
                 base_damage=total_damage,
                 damage_type="poison",
                 is_reflection=False
             )))
         
-        # 移除所有中毒状态
-        for effect in poison_effects:
-            effect.logic.on_remove(target, effect, self.event_bus)
-            container.effects.remove(effect)
+        # 移除所有中毒效果
+        for poison_effect in poison_effects:
+            poison_effect.logic.on_remove(payload.target, poison_effect, self.event_bus)
+            container.effects.remove(poison_effect)
         
-        # 播报移除信息
         self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-            f"**状态效果**: {target.name} 的所有中毒状态已被引爆并移除"
+            f"**状态效果**: {payload.target.name} 的所有中毒效果已被引爆并移除"
         )))

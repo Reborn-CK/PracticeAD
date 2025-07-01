@@ -129,7 +129,7 @@ class DispelRequestPayload:
 @dataclass
 class AmplifyPoisonRequestPayload:
     target: Entity
-    stacks_to_add: int
+    amplify_amount: int
     caster: Entity
     source_spell_id: str
     source_spell_name: str

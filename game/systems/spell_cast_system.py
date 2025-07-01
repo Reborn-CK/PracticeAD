@@ -116,10 +116,10 @@ class SpellCastSystem:
                     count=effect.get("count")
                 )))
             elif effect_type == "amplify_poison":
-                stacks_to_add = effect.get("stacks_to_add", 2)
+                amplify_amount = effect.get("amplify_amount", 2)
                 self.event_bus.dispatch(GameEvent(EventName.AMPLIFY_POISON_REQUEST, AmplifyPoisonRequestPayload(
                     target=payload.target,
-                    stacks_to_add=stacks_to_add,
+                    amplify_amount=amplify_amount,
                     caster=payload.caster,
                     source_spell_id=payload.spell_id,
                     source_spell_name=spell_data["name"]
