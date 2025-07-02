@@ -48,11 +48,6 @@ class CombatResolutionSystem:
     
     def on_damage_request(self, event: GameEvent):
         payload: DamageRequestPayload = event.payload
-        if payload.is_reflection:
-            if (health_comp := payload.caster.get_component(HealthComponent)):
-                health_comp.hp -= payload.base_damage
-                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"反射伤害: {payload.caster.name} 受到了 {payload.base_damage:.1f} 点伤害")))
-            return
         
         # 获取原始伤害和当前伤害
         original_damage = payload.original_base_damage or payload.base_damage
@@ -99,12 +94,12 @@ class CombatResolutionSystem:
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[PASSIVE]", f"{payload.target.name} 的反伤对 {payload.caster.name} 造成了 {reflection_damage:.1f} 点伤害")))
                 self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                     caster=payload.caster, 
-                    target=payload.target,
+                    target=payload.caster,
                     source_spell_id=payload.source_spell_id,
                     source_spell_name=payload.source_spell_name,
                     base_damage=reflection_damage, 
-                    damage_type="physical",
-                    is_reflection=True
+                    damage_type=payload.damage_type,
+                    is_reflection=False
                 )))
             
             # --- 新增：生命偷取处理逻辑 ---

@@ -3,7 +3,8 @@ from ..core.enums import EventName
 from ..core.payloads import (ApplyStatusEffectRequestPayload, RemoveStatusEffectRequestPayload,
                              UpdateStatusEffectsDurationRequestPayload, DispelRequestPayload,
                              StatQueryPayload, LogRequestPayload, UIMessagePayload, DamageRequestPayload,
-                             AmplifyPoisonRequestPayload, DetonatePoisonRequestPayload)
+                             AmplifyPoisonRequestPayload, DetonatePoisonRequestPayload,
+                             StatusEffectsResolvedPayload)
 from ..core.components import StatusEffectContainerComponent, DeadComponent
 from ..status_effects.status_effect import StatusEffect
 
@@ -129,6 +130,8 @@ class StatusEffectSystem:
     def on_round_start(self, event: GameEvent):
         """回合开始时，处理所有实体的状态效果"""
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", "---状态效果结算阶段---")))
+        
+        # 先进行状态效果结算
         for entity in self.world.entities:
             if entity.has_component(DeadComponent):
                 continue
@@ -144,6 +147,9 @@ class StatusEffectSystem:
             # 处理其他效果
             other_effects = [e for e in container.effects if e.effect_id != "poison_01"]
             self._tick_normal_effects(entity, other_effects, container)
+        
+        # 状态效果结算完成后，触发UI刷新事件
+        self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
     
     def _tick_poison_effects(self, entity, poison_effects, container):
         """结算中毒效果"""

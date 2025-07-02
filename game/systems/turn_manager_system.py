@@ -26,7 +26,12 @@ class TurnManagerSystem:
 
             living_entities.sort(key=lambda e: self.get_final_stat(e, "speed", e.get_component(SpeedComponent).speed), reverse=True)
             self.turn_queue = living_entities
+            
+            # 先触发状态效果结算事件
             self.event_bus.dispatch(GameEvent(EventName.ROUND_START, RoundStartPayload(self.round_number)))
+            
+            # 等待状态效果结算完成后再刷新UI
+            # 状态效果系统会在结算完成后触发 STATUS_EFFECTS_RESOLVED 事件
 
         if self.turn_queue:
             acting_entity = self.turn_queue.pop(0)

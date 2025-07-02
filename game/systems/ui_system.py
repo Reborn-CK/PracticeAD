@@ -84,7 +84,8 @@ class UISystem:
     def on_round_start(self, event: GameEvent):
         payload: RoundStartPayload = event.payload
         print(f"\n{'='*15} 回合 {payload.round_number} {'='*15}")
-        self._display_status_panel()
+        # 回合开始时只显示回合信息，不立即显示状态面板
+        # 状态面板将在状态效果结算完成后显示
 
     def on_status_effects_resolved(self, event: GameEvent):
         self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"[UI]**状态效果结算完毕**")))

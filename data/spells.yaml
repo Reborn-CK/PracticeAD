@@ -84,6 +84,7 @@ snowball_01:
     - type: "damage"
       amount: 100
       damage_type: "ice"
+      is_reflection: true
   interactions:
     - type: "on_damage_deal"
       target_has_effect: "burning_01"
@@ -100,8 +101,9 @@ wind_01:
   target: "enemy"
   effects:
     - type: "damage"
-      amount: 100
+      amount: 20
       damage_type: "wind"
+      is_reflection: true
   interactions:
     - type: "on_damage_deal"
       target_has_effect: "burning_01"

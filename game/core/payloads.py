@@ -141,3 +141,8 @@ class DetonatePoisonRequestPayload:
     caster: Entity
     source_spell_id: str
     source_spell_name: str
+
+@dataclass
+class StatusEffectsResolvedPayload:
+    """状态效果结算完成事件的payload"""
+    pass
