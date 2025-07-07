@@ -5,9 +5,8 @@ from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import (DamageRequestPayload, HealRequestPayload, GainShieldPayload,
                               EffectResolutionPayload, ResourceChangeEntry, LogRequestPayload,
-                              UIMessagePayload, HealthChangePayload)
-from ...core.components import (HealthComponent, DefenseComponent, ResistanceComponent, 
-                               ThornsComponent, GrievousWoundsComponent)
+                              UIMessagePayload)
+from ...core.components import (HealthComponent, DefenseComponent, ThornsComponent)
 from .damage_modifiers import DamageModifier, DefenseHandler, ResistanceHandler
 from .heal_modifiers import HealModifier, GrievousWoundsHandler
 
@@ -88,21 +87,43 @@ class CombatResolutionSystem:
         if (health_comp := payload.target.get_component(HealthComponent)):
             health_comp.hp -= final_damage
 
-            # --- 新增：反伤处理逻辑 ---
-            if final_damage > 0 and payload.is_reflection and (thorns_comp := payload.target.get_component(ThornsComponent)):
+            # 获取被动触发信息
+            passive_triggers = []
+            if self.passive_system:
+                passive_triggers = self.passive_system.get_and_clear_pending_triggers()
+            
+            # 准备资源变化列表
+            resource_changes = [ResourceChangeEntry("health", -final_damage, health_comp.hp, health_comp.max_hp)]
+            
+            # 检查是否是反伤伤害
+            is_reflection = payload.is_reflection
+            
+            # 先发送主伤害的播报事件
+            self.event_bus.dispatch(GameEvent(EventName.EFFECT_RESOLUTION_COMPLETE, EffectResolutionPayload(
+                caster=payload.caster, 
+                target=payload.target, 
+                source_spell=payload.source_spell_id,
+                resource_changes=resource_changes,
+                shield_blocked=shield_blocked,
+                passive_triggers=passive_triggers,
+                log_reflection=is_reflection
+            )))
+            
+            # --- 反伤处理逻辑（在主伤害播报之后） ---
+            if final_damage > 0 and payload.can_be_reflected and not payload.is_reflection and (thorns_comp := payload.target.get_component(ThornsComponent)):
                 reflection_damage = final_damage * thorns_comp.thorns_percentage
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[PASSIVE]", f"{payload.target.name} 的反伤对 {payload.caster.name} 造成了 {reflection_damage:.1f} 点伤害")))
                 self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
-                    caster=payload.caster, 
+                    caster=payload.target, 
                     target=payload.caster,
                     source_spell_id=payload.source_spell_id,
                     source_spell_name=payload.source_spell_name,
                     base_damage=reflection_damage, 
                     damage_type=payload.damage_type,
-                    is_reflection=False
+                    is_reflection=True
                 )))
             
-            # --- 新增：生命偷取处理逻辑 ---
+            # --- 生命偷取处理逻辑（在主伤害播报之后） ---
             if final_damage > 0 and payload.lifesteal_ratio:
                 lifesteal_amount = final_damage * payload.lifesteal_ratio
                 if lifesteal_amount > 0:
@@ -116,22 +137,6 @@ class CombatResolutionSystem:
                         heal_type="blood",
                         overheal_amount=0
                     )))
-            # 获取被动触发信息
-            passive_triggers = []
-            if self.passive_system:
-                passive_triggers = self.passive_system.get_and_clear_pending_triggers()
-            
-            # 准备资源变化列表
-            resource_changes = [ResourceChangeEntry("health", -final_damage, health_comp.hp, health_comp.max_hp)]
-            
-            self.event_bus.dispatch(GameEvent(EventName.EFFECT_RESOLUTION_COMPLETE, EffectResolutionPayload(
-                caster=payload.caster, 
-                target=payload.target, 
-                source_spell=payload.source_spell_id,
-                resource_changes=resource_changes,
-                shield_blocked=shield_blocked,
-                passive_triggers=passive_triggers
-            )))
     
     def on_heal_request(self, event: GameEvent):
         payload: HealRequestPayload = event.payload

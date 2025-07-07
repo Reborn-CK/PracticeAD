@@ -53,11 +53,12 @@ class StatusEffectContainerComponent:
 
 @dataclass
 class GrievousWoundsComponent:
-    reduction_percentage: float = 0.5
+    reduction: float = 0.5
 
 @dataclass
 class ResistanceComponent:
-    resistances: dict[str, float]
+    element: str
+    percentage: float
 
 @dataclass
 class ThornsComponent:

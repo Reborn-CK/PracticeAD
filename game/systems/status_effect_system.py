@@ -244,7 +244,8 @@ class StatusEffectSystem:
                 source_spell_name="中毒引爆",
                 base_damage=total_damage,
                 damage_type="poison",
-                is_reflection=False
+                is_reflection=False,
+                can_be_reflected=False
             )))
         
         # 移除所有中毒效果

@@ -68,7 +68,8 @@ class SpellCastSystem:
                     original_base_damage=effect["amount"],
                     damage_type=effect["damage_type"],
                     lifesteal_ratio=effect.get("lifesteal_ratio", 0),
-                    is_reflection=effect.get("is_reflection", False)
+                    is_reflection=effect.get("is_reflection", False),
+                    can_be_reflected=spell_data.get("can_be_reflected", False)
                 )))
             elif effect_type == "heal":
                 self.event_bus.dispatch(GameEvent(EventName.HEAL_REQUEST, HealRequestPayload(

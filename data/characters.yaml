@@ -16,11 +16,9 @@ hero:
   
   # 被动能力 (引用passives.yaml中的配置)
   passives:
-    - id: "resistance"
-      resistances:
-        fire: 0.5
-    - id: "grievous_wounds"
-      reduction_percentage: 0.5
+    - "fire_resistance_major"
+    - "fire_resistance_minor"
+    - "grievous_wounds_standard"
   
   # 技能列表
   spells:
@@ -54,9 +52,10 @@ boss:
   
   # 被动能力 (引用passives.yaml中的配置)
   passives:
-    - id: "thorns"
-      thorns_percentage: 0.5
+    - "fire_resistance_minor"
+    - "thorns_major"
   
   # 技能列表
   spells:
-    - "curse_of_slowness_01" 
+    - "fireball_01"
+    #- "curse_of_slowness_01" 

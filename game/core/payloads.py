@@ -53,6 +53,7 @@ class DamageRequestPayload:
     damage_type: str
     original_base_damage: Optional[float] = None
     lifesteal_ratio: Optional[float] = None
+    can_be_reflected: bool = False
     is_reflection: bool = False
 
 @dataclass
@@ -101,6 +102,7 @@ class EffectResolutionPayload:
     resource_changes: list = field(default_factory=list)
     shield_blocked: float = 0.0
     passive_triggers: list = field(default_factory=list)
+    log_reflection: Optional[bool] = None
 
 @dataclass
 class UIMessagePayload:

@@ -39,11 +39,35 @@ class DefenseHandler(DamageModifier):
 class ResistanceHandler(DamageModifier):
     """处理属性抗性"""
     def process(self, context: 'DamageResolutionContext', event_bus: EventBus):
-        if resistance_comp := context.target.get_component(ResistanceComponent):
-            if resistance_comp.resistances.get(context.damage_type, 1) < 1:
-                resistance_value = resistance_comp.resistances.get(context.damage_type, 1)
-                event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"当前伤害{context.current_damage:.1f}, {context.damage_type}抗性抵抗了 {context.current_damage * resistance_value} 点伤害")))
-                context.current_damage *= resistance_value
+        # 获取所有抗性组件
+        resistance_components = context.target.get_components(ResistanceComponent)
+        if not resistance_components:
+            return
+        
+        # 计算总抗性值
+        total_resistance = 1.0
+        applied_resistances = []
+        
+        for resistance_comp in resistance_components:
+            if resistance_comp.element == context.damage_type and resistance_comp.percentage < 1:
+                # 抗性值 = 1 - 减伤百分比
+                resistance_value = 1 - resistance_comp.percentage
+                total_resistance *= resistance_value
+                applied_resistances.append(f"{resistance_comp.element}({resistance_comp.percentage*100:.0f}%)")
+        
+        # 如果有抗性生效且有实际减伤
+        if total_resistance < 1.0:
+            original_damage = context.current_damage
+            context.current_damage *= total_resistance
+            damage_reduced = original_damage - context.current_damage
+            
+            # 只有当实际减伤大于0时才播报
+            if damage_reduced > 0.1:  # 使用0.1作为阈值，避免浮点数精度问题
+                resistance_info = ", ".join(applied_resistances)
+                event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                    "[COMBAT]", 
+                    f"当前伤害{original_damage:.1f}, {resistance_info}抗性抵抗了 {damage_reduced:.1f} 点伤害"
+                )))
 
 @dataclass
 class HealResolutionContext:

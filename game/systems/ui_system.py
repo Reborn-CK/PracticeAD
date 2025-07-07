@@ -111,8 +111,14 @@ class UISystem:
         """UI播报关键结果，包括谁对谁用了什么法术以及最终效果。"""
         payload: EffectResolutionPayload = event.payload
         
+        # 检查是否是反伤伤害
+        is_thorns_reflection = payload.log_reflection
+        
         # 构建基础信息
-        base_info = f"{payload.caster.name} 对 {payload.target.name} 使用了 {payload.source_spell}"
+        if is_thorns_reflection:
+            base_info = f"{payload.caster.name} 的反伤对 {payload.target.name}"
+        else:
+            base_info = f"{payload.caster.name} 对 {payload.target.name} 使用了 {payload.source_spell}"
         
         # 获取最终效果
         final_hp_change = next((r for r in payload.resource_changes if r.resource_name == 'health'), None)
@@ -122,11 +128,17 @@ class UISystem:
         if final_hp_change:
             if final_hp_change.change_amount < 0:
                 # 伤害情况
-                damage_info = f"造成了 {-final_hp_change.change_amount:.0f} 点伤害"
-                if payload.shield_blocked > 0:
-                    print(f"**战斗**: {base_info}，护盾抵消了 {payload.shield_blocked:.0f} 点伤害，{damage_info}！")
+                damage_amount = -final_hp_change.change_amount
+                if is_thorns_reflection:
+                    # 反伤伤害的特殊播报
+                    print(f"**反伤**: {base_info} 造成了 {damage_amount:.0f} 点反伤伤害！")
                 else:
-                    print(f"**战斗**: {base_info}，{damage_info}！")
+                    # 普通伤害播报
+                    damage_info = f"造成了 {damage_amount:.0f} 点伤害"
+                    if payload.shield_blocked > 0:
+                        print(f"**战斗**: {base_info}，护盾抵消了 {payload.shield_blocked:.0f} 点伤害，{damage_info}！")
+                    else:
+                        print(f"**战斗**: {base_info}，{damage_info}！")
             elif final_hp_change.change_amount > 0:
                 # 治疗情况
                 heal_info = f"恢复了 {final_hp_change.change_amount:.0f} 点生命值"

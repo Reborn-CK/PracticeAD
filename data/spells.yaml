@@ -2,6 +2,7 @@ fireball_01:
   name: 火球术
   cost: {resource: "mana", amount: 10}
   target: "enemy"
+  can_be_reflected: true
   effects:
     - type: "damage"
       amount: 15
@@ -37,6 +38,7 @@ combust_01:
   name: 燃烬
   cost: {resource: "mana", amount: 10}
   target: "enemy"
+  can_be_reflected: true
   interactions:
     - type: "on_cast"
       target_has_effect: "burning_01"
@@ -71,6 +73,7 @@ thunderbolt_01:
   name: 雷霆术
   cost: {resource: "mana", amount: 100}
   target: "enemy"
+  can_be_reflected: true
   effects:
     - type: "damage"
       amount: 160
@@ -80,11 +83,11 @@ snowball_01:
   name: 雪球术
   cost: {resource: "mana", amount: 10}
   target: "enemy"
+  can_be_reflected: true
   effects:
     - type: "damage"
       amount: 100
       damage_type: "ice"
-      is_reflection: true
   interactions:
     - type: "on_damage_deal"
       target_has_effect: "burning_01"

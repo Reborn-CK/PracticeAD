@@ -3,7 +3,10 @@ from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, S
                               DefenseComponent, StatusEffectContainerComponent, PlayerControlledComponent,
                               AIControlledComponent)
 from ..core.event_bus import EventBus
-from .passive_validator import PassiveValidator
+from ..core.enums import EventName
+from ..core.payloads import LogRequestPayload
+from ..core.event_bus import GameEvent
+from .passive_factory import PassiveFactory
 
 class CharacterFactory:
     """角色工厂类，负责根据配置创建角色实体"""
@@ -11,7 +14,7 @@ class CharacterFactory:
     def __init__(self, event_bus: EventBus, data_manager):
         self.event_bus = event_bus
         self.data_manager = data_manager
-        self.passive_validator = PassiveValidator(data_manager)
+        self.passive_factory = PassiveFactory(data_manager)
     
     def create_character(self, character_id: str, world) -> Entity:
         """根据角色ID创建角色实体"""
@@ -38,33 +41,22 @@ class CharacterFactory:
             entity.add_component(AIControlledComponent())
         
         # 添加被动能力组件
-        self._add_passive_components(entity, character_data.get('passives', []))
+        passive_versions = character_data.get('passives', [])
+        self._add_passive_components(entity, passive_versions)
         
         return entity
     
-    def _add_passive_components(self, entity: Entity, passives: list):
+    def _add_passive_components(self, entity: Entity, passives_versions: list):
         """添加被动能力组件"""
-        for passive in passives:
-            passive_id = passive['id']
-            passive_data = {k: v for k, v in passive.items() if k != 'id'}
-            
-            # 验证被动能力配置
-            is_valid, errors = self.passive_validator.validate_passive(passive_id, passive_data)
-            if not is_valid:
-                print(f"警告: 被动能力 {passive_id} 配置错误:")
-                for error in errors:
-                    print(f"  - {error}")
-                continue
-            
+        for version_id in passives_versions:
             try:
                 # 创建被动能力组件
-                component = self.passive_validator.create_passive_component(passive_id, passive_data)
-                entity.add_component(component)
-                
-                # 获取被动能力信息用于显示
-                passive_info = self.passive_validator.get_passive_info(passive_id)
-                print(f"成功添加被动能力: {passive_info['name']} ({passive_id})")
-                
+                component = self.passive_factory.create_passive_component(version_id)
+                if component:
+                    entity.add_component(component)
+                    passive_info = self.data_manager.get_passive_version_data(version_id)
+                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[PASSIVE Load]", f"成功添加被动能力: {passive_info['name']} ({version_id})")))
+                    
             except Exception as e:
-                print(f"错误: 创建被动能力 {passive_id} 失败: {e}")
-                continue 
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[PASSIVE Load]", f"创建被动能力组件失败: {e}")))
+                continue

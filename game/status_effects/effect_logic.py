@@ -62,7 +62,8 @@ class DamageOverTimeEffect(EffectLogic):
                 source_spell_name=effect.name,
                 base_damage=total_damage,
                 damage_type=effect.context.get("damage_type", "pure"),
-                is_reflection=False
+                can_be_reflected=effect.context.get("can_be_reflected", False),
+                is_reflection=effect.context.get("is_reflection", False)
             )))
 
 class StatModificationLogic(EffectLogic):
@@ -117,9 +118,10 @@ class PoisonDotEffect(EffectLogic):
                 source_spell_name=effect.name,
                 base_damage=total_damage,
                 damage_type=effect.context.get("damage_type", "pure"),
-                is_reflection=False
+                can_be_reflected=effect.context.get("can_be_reflected", False),
+                is_reflection=effect.context.get("is_reflection", False)
             )))
-    
+
     def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
         pass
 
@@ -191,7 +193,8 @@ class PoisonEffectLogic(EffectLogic):
                 source_spell_name="中毒",
                 base_damage=total_damage,
                 damage_type="poison",
-                is_reflection=False
+                can_be_reflected=poison_effects[0].context.get("can_be_reflected", False),
+                is_reflection=poison_effects[0].context.get("is_reflection", False)
             )))
         
         # 中毒层数减1

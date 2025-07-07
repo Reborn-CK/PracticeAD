@@ -1,9 +1,48 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .components import ResistanceComponent
 
 class Entity:
     def __init__(self, name: str):
         self.name = name
-        self._components = {}
-    def add_component(self, c: Any): self._components[type(c)] = c; return c
-    def get_component(self, ct: type): return self._components.get(ct)
-    def has_component(self, ct: type): return ct in self._components
+        self._components = {}  # 存储单个组件
+        self._component_lists = {}  # 存储多个同类型组件
+    
+    def add_component(self, c: Any): 
+        # 对于某些组件类型，允许多个实例
+        component_type = type(c)
+        component_name = component_type.__name__
+        
+        # 可以添加多个同类型组件的组件列表
+        multi_component_types = ['ResistanceComponent']
+        
+        if component_name in multi_component_types:  # 可以添加多个抗性组件
+            if component_type not in self._component_lists:
+                self._component_lists[component_type] = []
+            self._component_lists[component_type].append(c)
+            return c
+        else:
+            # 其他组件类型只允许一个实例
+            self._components[component_type] = c
+            return c
+    
+    def get_component(self, ct: type): 
+        # 优先从单个组件中获取
+        if ct in self._components:
+            return self._components[ct]
+        # 如果单个组件中没有，从组件列表中获取第一个
+        if ct in self._component_lists and self._component_lists[ct]:
+            return self._component_lists[ct][0]
+        return None
+    
+    def has_component(self, ct: type): 
+        return ct in self._components or (ct in self._component_lists and self._component_lists[ct])
+    
+    def get_components(self, ct: type): 
+        """获取指定类型的所有组件（用于支持多个同类型组件）"""
+        if ct in self._component_lists:
+            return self._component_lists[ct]
+        elif ct in self._components:
+            return [self._components[ct]]
+        return []

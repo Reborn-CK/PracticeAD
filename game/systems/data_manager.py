@@ -31,7 +31,6 @@ class DataManager:
         except Exception as e:
             print(f"[错误] 加载角色数据文件{file_path}失败: {e}")
             raise
-
     def load_passive_data(self, file_path="data/passives.yaml"):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -39,7 +38,18 @@ class DataManager:
         except Exception as e:
             print(f"[错误] 加载被动能力数据文件{file_path}失败: {e}")
             raise
-
+    def get_passive_version_data(self, version_id: str) -> dict | None :
+        """根据 version_id获取被动能力版本数据"""
+        for passive_id, passive_info in self.passive_data.items():
+            for version in passive_info.get('versions', []):
+                if version.get('version_id') == version_id:
+                    # 将基础信息和版本信息合并
+                    result = passive_info.get('effect', {}).copy()
+                    result.update(version.get('values', {}))
+                    result['name'] = passive_info.get('name', passive_id)
+                    result['description'] = passive_info.get('description', '')
+                    return result
+        return None
     def get_character_data(self, character_id: str):
         """获取角色数据"""
         return self.character_data.get(character_id)
