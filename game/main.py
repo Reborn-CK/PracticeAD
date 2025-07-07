@@ -1,8 +1,5 @@
 from .core.event_bus import EventBus
 from .core.entity import Entity
-from .core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent,
-                             DefenseComponent, StatusEffectContainerComponent, PlayerControlledComponent,
-                             AIControlledComponent, ResistanceComponent, GrievousWoundsComponent, ThornsComponent)
 from .world import World
 from .systems.data_manager import DataManager
 from .systems.log_system import LogSystem
@@ -17,6 +14,7 @@ from .systems.mana_system import ManaSystem
 from .systems.passive_ability_system import PassiveAbilitySystem
 from .systems.combat.combat_resolution_system import CombatResolutionSystem
 from .systems.dead_system import DeadSystem
+from .systems.character_factory import CharacterFactory
 from .status_effects.status_effect_factory import StatusEffectFactory
 
 def main():
@@ -25,9 +23,11 @@ def main():
     event_bus = EventBus()
     data_manager = DataManager()
     status_effect_factory = StatusEffectFactory(data_manager)
-    print("加载法术数据...")
+    print("加载游戏数据...")
     data_manager.load_spell_data()
     data_manager.load_status_effect_data()
+    data_manager.load_passive_data()
+    data_manager.load_character_data()
     world = World(event_bus)
 
     # 2. 创建并注册所有系统
@@ -66,43 +66,13 @@ def main():
     # --- 优先级200，死亡检查 ---
     world.add_system(DeadSystem(event_bus, world), priority=200)
 
-    # 3. 创建实体并添加组件
+    # 3. 创建角色工厂和游戏实体
     print("创建游戏实体...")
-    player = world.add_entity(Entity("勇者"))
-    player.add_component(PlayerControlledComponent())
-    player.add_component(HealthComponent(player, event_bus, hp=100, max_hp=100))
-    player.add_component(ResistanceComponent(resistances={"fire": 0.5}))
-    player.add_component(ManaComponent(mana=500, max_mana=500))
-    player.add_component(DefenseComponent(defense_value=0))
-    player.add_component(GrievousWoundsComponent(reduction_percentage=0.5))
-    player.add_component(SpeedComponent(speed=60))
-    player.add_component(StatusEffectContainerComponent())
-    player.add_component(SpellListComponent(spells=[
-        "fireball_01", 
-        "vampiric_touch_01", 
-        "heal_01", 
-        "heal_02", 
-        "snowball_01", 
-        "wind_01", 
-        "combust_01", 
-        "blessing_stance_01",
-        "poison_cloud_01",
-        "curse_of_slowness_01",
-        "haste_01",
-        "purify_01",
-        "poison_amplify_01",
-        "poison_detonate_01"
-    ]))
-
-    enemy = world.add_entity(Entity("BOSS"))
-    enemy.add_component(AIControlledComponent())
-    enemy.add_component(HealthComponent(enemy, event_bus, hp=150, max_hp=150))
-    enemy.add_component(ManaComponent(mana=500, max_mana=500))
-    enemy.add_component(DefenseComponent(defense_value=100))
-    enemy.add_component(SpeedComponent(speed=50))
-    enemy.add_component(ThornsComponent(thorns_percentage=0.5))
-    enemy.add_component(StatusEffectContainerComponent())
-    enemy.add_component(SpellListComponent(spells=["curse_of_slowness_01"]))
+    character_factory = CharacterFactory(event_bus, data_manager)
+    
+    # 使用配置文件创建角色
+    player = character_factory.create_character("hero", world)
+    enemy = character_factory.create_character("boss", world)
 
     # 4. 启动游戏世界
     print("开始游戏...")

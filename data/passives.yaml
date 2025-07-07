@@ -1,0 +1,91 @@
+# 被动能力配置文件
+# 定义游戏中所有被动能力的属性和效果
+
+resistance:
+  name: "元素抗性"
+  description: "减少特定元素伤害"
+  type: "resistance"
+  component: "ResistanceComponent"
+  required_properties:
+    - "resistances"
+  properties:
+    resistances:
+      type: "dict"
+      description: "抗性映射，格式为 {元素类型: 减伤比例}"
+      example:
+        fire: 0.5
+        ice: 0.3
+        thunder: 0.2
+
+grievous_wounds:
+  name: "重伤"
+  description: "减少治疗效果"
+  type: "grievous_wounds"
+  component: "GrievousWoundsComponent"
+  required_properties:
+    - "reduction_percentage"
+  properties:
+    reduction_percentage:
+      type: "float"
+      description: "治疗效果减少比例 (0.0-1.0)"
+      example: 0.5
+
+thorns:
+  name: "反伤"
+  description: "受到攻击时反弹伤害"
+  type: "thorns"
+  component: "ThornsComponent"
+  required_properties:
+    - "thorns_percentage"
+  properties:
+    thorns_percentage:
+      type: "float"
+      description: "反伤比例 (0.0-1.0)"
+      example: 0.5
+
+# 可以继续添加更多被动能力类型
+# 例如：
+# lifesteal:
+#   name: "生命偷取"
+#   description: "攻击时恢复生命值"
+#   type: "lifesteal"
+#   component: "LifestealComponent"
+#   properties:
+#     lifesteal_ratio:
+#       type: "float"
+#       description: "生命偷取比例"
+#       example: 0.2
+
+# critical_strike:
+#   name: "暴击"
+#   description: "攻击有几率造成暴击"
+#   type: "critical_strike"
+#   component: "CriticalStrikeComponent"
+#   properties:
+#     critical_chance:
+#       type: "float"
+#       description: "暴击几率"
+#       example: 0.15
+#     critical_multiplier:
+#       type: "float"
+#       description: "暴击倍率"
+#       example: 2.0
+
+# 示例：添加一个新的被动能力
+# 要添加新被动能力，需要：
+# 1. 在passives.yaml中定义配置
+# 2. 在components.py中创建对应组件
+# 3. 在character_factory.py中添加创建逻辑
+# 4. 在characters.yaml中引用
+
+# 示例：护盾强化被动
+shield_boost:
+  name: "护盾强化"
+  description: "增加护盾效果"
+  type: "shield_boost"
+  component: "ShieldBoostComponent"
+  properties:
+    shield_multiplier:
+      type: "float"
+      description: "护盾效果倍率"
+      example: 1.5 

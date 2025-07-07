@@ -1,0 +1,62 @@
+# 角色配置文件
+# 定义游戏中所有角色的属性、技能和被动能力
+
+hero:
+  name: "勇者"
+  type: "player"
+  
+  # 基础属性
+  stats:
+    hp: 100
+    max_hp: 100
+    mana: 500
+    max_mana: 500
+    speed: 60
+    defense: 0
+  
+  # 被动能力 (引用passives.yaml中的配置)
+  passives:
+    - id: "resistance"
+      resistances:
+        fire: 0.5
+    - id: "grievous_wounds"
+      reduction_percentage: 0.5
+  
+  # 技能列表
+  spells:
+    - "fireball_01"
+    - "vampiric_touch_01"
+    - "heal_01"
+    - "heal_02"
+    - "snowball_01"
+    - "wind_01"
+    - "combust_01"
+    - "blessing_stance_01"
+    - "poison_cloud_01"
+    - "curse_of_slowness_01"
+    - "haste_01"
+    - "purify_01"
+    - "poison_amplify_01"
+    - "poison_detonate_01"
+
+boss:
+  name: "BOSS"
+  type: "enemy"
+  
+  # 基础属性
+  stats:
+    hp: 150
+    max_hp: 150
+    mana: 500
+    max_mana: 500
+    speed: 50
+    defense: 100
+  
+  # 被动能力 (引用passives.yaml中的配置)
+  passives:
+    - id: "thorns"
+      thorns_percentage: 0.5
+  
+  # 技能列表
+  spells:
+    - "curse_of_slowness_01" 

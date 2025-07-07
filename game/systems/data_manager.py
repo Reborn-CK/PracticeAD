@@ -5,6 +5,8 @@ class DataManager:
     def __init__(self):
         self.spell_data = {}
         self.status_effect_data = {}
+        self.character_data = {}
+        self.passive_data = {}
 
     def load_spell_data(self, file_path="data/spells.yaml"):
         try:
@@ -21,6 +23,30 @@ class DataManager:
         except Exception as e:
             print(f"[错误] 加载状态效果数据文件{file_path}失败: {e}")
             raise
+
+    def load_character_data(self, file_path="data/characters.yaml"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.character_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载角色数据文件{file_path}失败: {e}")
+            raise
+
+    def load_passive_data(self, file_path="data/passives.yaml"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.passive_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载被动能力数据文件{file_path}失败: {e}")
+            raise
+
+    def get_character_data(self, character_id: str):
+        """获取角色数据"""
+        return self.character_data.get(character_id)
+
+    def get_passive_data(self, passive_id: str):
+        """获取被动能力数据"""
+        return self.passive_data.get(passive_id)
 
     def get_spell_data(self, spell_id: str):
         return self.spell_data.get(spell_id)
