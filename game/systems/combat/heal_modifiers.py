@@ -12,5 +12,10 @@ class HealModifier(ABC):
 class GrievousWoundsHandler(HealModifier):
     def process(self, context: 'HealResolutionContext', event_bus: EventBus):
         if grievous_comp := context.target.get_component(GrievousWoundsComponent):
-            event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"受到了 {grievous_comp.reduction_percentage:.1f} 治疗减益")))
-            context.current_heal *= (1 - grievous_comp.reduction_percentage) 
+            original_heal = context.current_heal
+            context.current_heal *= (1 - grievous_comp.reduction)
+            heal_reduced = original_heal - context.current_heal
+            event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                "[COMBAT]", 
+                f"{context.target.name} 的重伤效果使治疗降低了 {grievous_comp.reduction*100:.0f}%，治疗从 {original_heal:.1f} 降低到 {context.current_heal:.1f}，减少了 {heal_reduced:.1f} 点治疗"
+            ))) 

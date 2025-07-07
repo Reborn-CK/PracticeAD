@@ -66,7 +66,7 @@ class ResistanceHandler(DamageModifier):
                 resistance_info = ", ".join(applied_resistances)
                 event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
                     "[COMBAT]", 
-                    f"当前伤害{original_damage:.1f}, {resistance_info}抗性抵抗了 {damage_reduced:.1f} 点伤害"
+                    f"{context.target.name} 的 {resistance_info}抗性抵抗了 {damage_reduced:.1f} 点伤害，伤害从 {original_damage:.1f} 降低到 {context.current_damage:.1f}"
                 )))
 
 @dataclass
