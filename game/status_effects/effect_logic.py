@@ -17,6 +17,7 @@ class EffectLogic(ABC):
     
     def can_stack_with(self, existing_effect: StatusEffect, new_effect: StatusEffect) -> bool:
         """检查新效果是否可以与现有效果堆叠"""
+        # 只有完全相同的效果ID才能堆叠（包括版本号）
         return existing_effect.effect_id == new_effect.effect_id
     
     def handle_stacking(self, target: Entity, existing_effect: StatusEffect, new_effect: StatusEffect, event_bus: EventBus) -> bool:
@@ -50,12 +51,21 @@ class DamageOverTimeEffect(EffectLogic):
     """持续伤害效果"""
     def on_tick(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
         damage_per_round = effect.context.get("damage_per_round", 0)
-        stacks = effect.stack_count
-        total_damage = damage_per_round * stacks
+        if effect.stack_count is None:
+            total_damage = damage_per_round
+        else:
+            stacks = effect.stack_count
+            total_damage = damage_per_round * stacks
+
         if total_damage > 0:
-            event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                f"**持续伤害**: {target.name} 因为持续伤害 [{effect.name} x{stacks}] 受到 {total_damage:.1f} 点伤害"
-            )))
+            if effect.stack_count:
+                event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                    f"**持续伤害**: {target.name} 因为持续伤害 [{effect.name} x{stacks}] 受到 {total_damage:.1f} 点伤害"
+                )))
+            else:
+                event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                    f"**持续伤害**: {target.name} 因为持续伤害 [{effect.name}] 受到 {total_damage:.1f} 点伤害"
+                )))
             event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                 caster=effect.caster or target,
                 target=target,

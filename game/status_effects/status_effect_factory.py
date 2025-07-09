@@ -24,6 +24,7 @@ class StatusEffectFactory:
     def create_effect(self, effect_id: str, caster: Optional[Entity] = None) -> Optional[StatusEffect]:
         """
         根据效果ID和施法者，从数据文件中创建并返回一个完整的StatusEffect实例。
+        支持新的版本化结构和旧的直接ID结构。
         """
         effect_data = self.data_manager.get_status_effect_data(effect_id)
         if not effect_data:

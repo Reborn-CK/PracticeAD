@@ -1,63 +1,120 @@
-burning_01:
-  name: 燃烧
+# 燃烧
+burning:
+  name: "燃烧"
+  description: "持续造成火焰伤害的燃烧效果。"
   category: "elemental_debuff"
   logic: "dot"
   stacking: "refresh_duration"
-  duration: 3
-  context:
-    damage_per_round: 5
-    damage_type: "fire"
-
-poison_01:
-  name: 中毒
+  versions:
+    - version_id: "burning_01"
+      name: "燃烧1"
+      description: "基础燃烧效果，每回合造成火焰伤害。"
+      duration: 3
+      context:
+        damage_per_round: 5
+        damage_type: "fire"
+        is_reflection: true
+    - version_id: "burning_02"
+      name: "燃烧2"
+      description: "中级燃烧效果，每回合造成火焰伤害。"
+      duration: 3
+      context:
+        damage_per_round: 10
+        damage_type: "fire"
+        is_reflection: true
+# 中毒
+poison:
+  name: "中毒"
+  description: "持续造成毒素伤害的中毒效果。"
   category: "physical_debuff"
   logic: "poison"
   stacking: "stack_intensity"
-  stack_count: 0
-  stack_intensity: 3
-  poison_number: 5
-  max_stacks: 10
-  context:
-    damage_per_round: 5
-    damage_type: "poison"
+  versions:
+    - version_id: "poison_01"
+      name: "中毒1"
+      description: "基础中毒效果，可堆叠层数。"
+      stack_count: 0
+      stack_intensity: 2
+      poison_number: 2
+      max_stacks: 10
+      context:
+        damage_per_round: 5
+        damage_type: "poison"
+        is_reflection: true
+    - version_id: "poison_02"
+      name: "中毒2"
+      description: "中级中毒效果，可堆叠层数。"
+      stack_count: 0
+      stack_intensity: 3
+      poison_number: 3
+      max_stacks: 10
+      context:
+        damage_per_round: 5
+        damage_type: "poison"
+        is_reflection: true
 
-speeddown_01:
-  name: 缓慢
+# 缓慢
+speeddown:
+  name: "缓慢"
+  description: "降低目标行动速度的减益效果。"
   category: "magic_debuff"
   logic: "stat_mod"
   stacking: "refresh_duration"
-  duration: 3
-  context:
-    stat_mods:
-      speed: {multiply: 0.5}
+  versions:
+    - version_id: "speeddown_01"
+      name: "缓慢"
+      description: "基础缓慢效果，降低目标速度。"
+      duration: 3
+      context:
+        stat_mods:
+          speed: {multiply: 0.5}
 
-speedup_01:
-  name: 加速
+# 加速
+speedup:
+  name: "加速"
+  description: "提升目标行动速度的增益效果。"
   category: "magic_buff"
   logic: "stat_mod"
   stacking: "refresh_duration"
-  duration: 3
-  context:
-    stat_mods:
-      speed: {add: 20}
+  versions:
+    - version_id: "speedup_01"
+      name: "加速1"
+      description: "基础加速效果，提升目标速度。"
+      duration: 3
+      context:
+        stat_mods:
+          speed: {add: 20}
 
-wet_01:
-  name: 潮湿
+# 潮湿
+wet:
+  name: "潮湿"
+  description: "使目标变得潮湿，影响元素抗性。"
   category: "physical_debuff"
   logic: "stat_mod"
   stacking: "refresh_duration"
-  duration: 3
-  context:
-    stat_mods:
-      resistance: {fire: {add: 10}}
-      resistance: {thunder: {reduce: 10}}
+  versions:
+    - version_id: "wet_01"
+      name: "潮湿1"
+      description: "基础潮湿效果，提升火焰抗性但降低雷电抗性。"
+      duration: 3
+      context:
+        stat_mods:
+          resistance:
+            fire: {add: 10}
+            thunder: {reduce: 10}
 
-overheal_conversion_01:
-  name: 溢疗转换
+# 溢疗转换
+overheal_conversion:
+  name: "溢疗转换"
+  description: "将溢出治疗转化为护盾的增益效果。"
   category: "magic_buff"
   logic: "overheal"
   stacking: "refresh_duration"
-  duration: 3
-  context:
-    conversion_rate: 0.5
+  versions:
+    - version_id: "overheal_conversion_01"
+      name: "溢疗转换"
+      description: "基础溢疗转换效果，将溢出治疗转化为护盾。"
+      duration: 3
+      context:
+        conversion_rate: 0.5
 

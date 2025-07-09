@@ -1,189 +1,342 @@
-fireball_01:
-  name: 火球术
-  cost: {resource: "mana", amount: 10}
+# 普通攻击
+normal_attack:
+  name: "普通攻击"
+  description: "对敌人造成基础伤害。"
+  cost:
+    resource: "mana"
+    amount: 0
+  target: "enemy"
+  versions:
+    - version_id: "normal_attack_01"
+      name: "普通攻击1"
+      description: "基础普通攻击，造成基础伤害。"
+      effects:
+        - type: "damage"
+          amount: 10
+          damage_type: "physical"
+    - version_id: "normal_attack_02"
+      name: "普通攻击2"
+      description: "中级普通攻击，造成基础伤害。"
+      effects:
+        - type: "damage"
+          amount: 20
+          damage_type: "physical"
+
+# 火球术
+fireball:
+  name: "火球术"
+  description: "发射一个火球对敌人造成火焰伤害。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
   can_be_reflected: true
   can_crit: true
-  effects:
-    - type: "damage"
-      amount: 15
-      damage_type: "fire"
-    - type: "apply_status_effect"
-      status_effect_id: "burning_01"
+  versions:
+    - version_id: "fireball_01"
+      name: "火球术1"
+      description: "基础火球术，造成火焰伤害并可能造成燃烧。"
+      effects:
+        - type: "damage"
+          amount: 15
+          damage_type: "fire"
+        - type: "apply_status_effect"
+          status_effect_id: "burning_01"
+    - version_id: "fireball_02"
+      name: "火球术2"
+      description: "中级火球术，造成火焰伤害并可能造成燃烧。"
+      effects:
+        - type: "damage"
+          amount: 20
+          damage_type: "fire"
+        - type: "apply_status_effect"
+          status_effect_id: "burning_02"
 
-poison_cloud_01:
-  name: 毒云术
+# 毒云术
+poison_cloud:
+  name: "毒云术"
+  description: "释放毒云对敌人造成中毒效果。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
-  cost: {resource: "mana", amount: 10}
-  effects:
-    - type: "apply_status_effect"
-      status_effect_id: "poison_01"
+  versions:
+    - version_id: "poison_cloud_01"
+      name: "毒云术1"
+      description: "基础毒云术，对敌人施加中毒效果。"
+      effects:
+        - type: "apply_status_effect"
+          status_effect_id: "poison_01"
+    - version_id: "poison_cloud_02"
+      name: "毒云术2"
+      description: "中级毒云术，对敌人施加中毒效果。"
+      effects:
+        - type: "apply_status_effect"
+          status_effect_id: "poison_02"
 
-curse_of_slowness_01:
-  name: 迟缓诅咒
+# 迟缓诅咒
+curse_of_slowness:
+  name: "迟缓诅咒"
+  description: "诅咒敌人使其行动速度降低。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
-  cost: {resource: "mana", amount: 10}
-  effects:
-    - type: "apply_status_effect"
-      status_effect_id: "speeddown_01"
+  versions:
+    - version_id: "curse_of_slowness_01"
+      name: "迟缓诅咒"
+      description: "基础迟缓诅咒，降低敌人速度。"
+      effects:
+        - type: "apply_status_effect"
+          status_effect_id: "speeddown_01"
 
-haste_01:
-  name: 加速术
+# 加速术
+haste:
+  name: "加速术"
+  description: "提升盟友的行动速度。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "ally"
-  cost: {resource: "mana", amount: 10}
-  effects:
-    - type: "apply_status_effect"
-      status_effect_id: "speedup_01"
+  versions:
+    - version_id: "haste_01"
+      name: "加速术"
+      description: "基础加速术，提升盟友速度。"
+      effects:
+        - type: "apply_status_effect"
+          status_effect_id: "speedup_01"
 
-combust_01:
-  name: 燃烬
-  cost: {resource: "mana", amount: 10}
+# 燃烬
+combust:
+  name: "燃烬"
+  description: "引爆目标身上的燃烧效果，造成额外伤害。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
   can_be_reflected: true
-  interactions:
-    - type: "on_cast"
-      target_has_effect: "burning_01"
-      action: "consume_and_damage"
-      context:
-        damage_source: "remaining_dot_damage"
-        damage_type: "fire"
-        remove_effect_id: "burning_01"
-        message: "**燃烬引爆**: {caster_name} 的[燃烬]引爆了 {target_name} 身上的[燃烧], 造成 {damage:.1f} 点伤害！"
+  versions:
+    - version_id: "combust_01"
+      name: "燃烬"
+      description: "基础燃烬，引爆燃烧效果。"
+      interactions:
+        - type: "on_cast"
+          target_has_effect: "burning_01"
+          action: "consume_and_damage"
+          context:
+            damage_source: "remaining_dot_damage"
+            damage_type: "fire"
+            remove_effect_id: "burning_01"
+            message: "**燃烬引爆**: {caster_name} 的[燃烬]引爆了 {target_name} 身上的[燃烧], 造成 {damage:.1f} 点伤害！"
 
-heal_01:
-  name: 治疗术
-  cost: {resource: "mana", amount: 20}
+# 治疗术
+heal:
+  name: "治疗术"
+  description: "治疗盟友的生命值。"
+  cost:
+    resource: "mana"
+    amount: 20
   target: "ally"
-  effects:
-    - type: "heal"
-      amount: 20
-      heal_type: "light"
+  versions:
+    - version_id: "heal_01"
+      name: "治疗术"
+      description: "基础治疗术，恢复生命值。"
+      effects:
+        - type: "heal"
+          amount: 20
+          heal_type: "light"
+    - version_id: "heal_02"
+      name: "溢疗术"
+      description: "高级治疗术，溢出治疗转化为护盾。"
+      effects:
+        - type: "heal"
+          amount: 20
+          heal_type: "light"
+          overheal_to_shield:
+            conversion_ratio: 0.5
 
-heal_02:
-  name: 溢疗术
-  cost: {resource: "mana", amount: 20}
-  target: "ally"
-  effects:
-    - type: "heal"
-      amount: 20
-      heal_type: "light"
-      overheal_to_shield:
-        conversion_ratio: 0.5
-
-thunderbolt_01:
-  name: 雷霆术
-  cost: {resource: "mana", amount: 100}
+# 雷霆术
+thunderbolt:
+  name: "雷霆术"
+  description: "召唤雷霆对敌人造成雷电伤害。"
+  cost:
+    resource: "mana"
+    amount: 100
   target: "enemy"
   can_be_reflected: true
   can_crit: true
-  effects:
-    - type: "damage"
-      amount: 160
-      damage_type: "thunder"
+  versions:
+    - version_id: "thunderbolt_01"
+      name: "雷霆术"
+      description: "基础雷霆术，造成大量雷电伤害。"
+      effects:
+        - type: "damage"
+          amount: 160
+          damage_type: "thunder"
 
-snowball_01:
-  name: 雪球术
-  cost: {resource: "mana", amount: 10}
+# 雪球术
+snowball:
+  name: "雪球术"
+  description: "投掷雪球对敌人造成冰霜伤害。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
   can_be_reflected: true
-  effects:
-    - type: "damage"
-      amount: 100
-      damage_type: "ice"
-  interactions:
-    - type: "on_damage_deal"
-      target_has_effect: "burning_01"
-      action: "extinguish"
-      context:
-        damage_multiplier: 0.5
-        apply_status_effect_id: "wet_01"
-        remove_effect_id: "burning_01"
-        message: "**法术联动**: {source_spell_name} 熄灭了 {target_name} 的[燃烧], 伤害减弱并附加了[潮湿]状态！"
+  versions:
+    - version_id: "snowball_01"
+      name: "雪球术"
+      description: "基础雪球术，造成冰霜伤害并可能熄灭燃烧。"
+      effects:
+        - type: "damage"
+          amount: 100
+          damage_type: "ice"
+      interactions:
+        - type: "on_damage_deal"
+          target_has_effect: "burning_01"
+          action: "extinguish"
+          context:
+            damage_multiplier: 0.5
+            apply_status_effect_id: "wet_01"
+            remove_effect_id: "burning_01"
+            message: "**法术联动**: {source_spell_name} 熄灭了 {target_name} 的[燃烧], 伤害减弱并附加了[潮湿]状态！"
 
-wind_01:
-  name: 风刃术
-  cost: {resource: "mana", amount: 10}
+# 风刃术
+wind:
+  name: "风刃术"
+  description: "释放风刃对敌人造成风系伤害。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
   can_be_reflected: true
-  effects:
-    - type: "damage"
-      amount: 20
-      damage_type: "wind"
-  interactions:
-    - type: "on_damage_deal"
-      target_has_effect: "burning_01"
-      action: "extend_duration"
-      context:
-        extend_duration: 10
-        message: "**法术联动**: {source_spell_name} 助长了 {target_name} 的[燃烧]效果, 持续时间延长了!"
+  versions:
+    - version_id: "wind_01"
+      name: "风刃术"
+      description: "基础风刃术，造成风系伤害并可能延长燃烧。"
+      effects:
+        - type: "damage"
+          amount: 20
+          damage_type: "wind"
+      interactions:
+        - type: "on_damage_deal"
+          target_has_effect: "burning_01"
+          action: "extend_duration"
+          context:
+            extend_duration: 10
+            message: "**法术联动**: {source_spell_name} 助长了 {target_name} 的[燃烧]效果, 持续时间延长了!"
 
-vampiric_touch_01:
-  name: 吸血术
-  cost: {resource: "mana", amount: 10}
+# 吸血术
+vampiric_touch:
+  name: "吸血术"
+  description: "对敌人造成伤害并吸取生命值。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
   can_be_reflected: true
-  effects:
-    - type: "damage"
-      amount: 50
-      damage_type: "blood"
-      lifesteal_ratio: 0.5
+  versions:
+    - version_id: "vampiric_touch_01"
+      name: "吸血术"
+      description: "基础吸血术，造成伤害并吸取生命。"
+      effects:
+        - type: "damage"
+          amount: 50
+          damage_type: "blood"
+          lifesteal_ratio: 0.5
 
-blessing_stance_01:
-  name: 溢疗转换
-  cost: {resource: "mana", amount: 10}
+# 溢疗转换
+blessing_stance:
+  name: "溢疗转换"
+  description: "为盟友施加溢疗转换效果。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "ally"
-  effects:
-    - type: "apply_status_effect"
-      status_effect_id: "overheal_conversion_01"
+  versions:
+    - version_id: "blessing_stance_01"
+      name: "溢疗转换"
+      description: "基础溢疗转换，将溢出治疗转化为护盾。"
+      effects:
+        - type: "apply_status_effect"
+          status_effect_id: "overheal_conversion_01"
 
-purify_01:
-  name: 净化
-  cost: {resource: "mana", amount: 10}
+# 净化
+purify:
+  name: "净化"
+  description: "移除盟友身上的负面状态效果。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "ally"
-  effects:
-    - type: "dispel"
-      category: "magic_debuff"
-      count: 1
+  versions:
+    - version_id: "purify_01"
+      name: "净化"
+      description: "基础净化，移除魔法减益效果。"
+      effects:
+        - type: "dispel"
+          category: "magic_debuff"
+          count: 1
+    - version_id: "purify_02"
+      name: "净化2"
+      description: "高级净化，移除所有负面效果。"
+      effects:
+        - type: "dispel"
+          category: "all"
+          count: 5
+    - version_id: "purify_03"
+      name: "净化3"
+      description: "终极净化，减少减益效果的层数和持续时间。"
+      effects:
+        - type: "reduce_debuffs"
+          reduce_stack_count: 1
+          reduce_duration_count: 1
 
-purify_02:
-  name: 净化2
-  cost: {resource: "mana", amount: 10}
-  target: "ally"
-  effects:
-    - type: "dispel"
-      category: "all"
-      count: 5 # 净化5个状态
-
-purify_03:
-  name: 净化3
-  cost: {resource: "mana", amount: 10}
-  target: "ally"
-  effects:
-    - type: "reduce_debuffs"
-      reduce_stack_count: 1
-      reduce_duration_count: 1
-
-dispel_01:
-  name: 驱散
-  cost: {resource: "mana", amount: 10}
+# 驱散
+dispel:
+  name: "驱散"
+  description: "移除敌人身上的增益状态效果。"
+  cost:
+    resource: "mana"
+    amount: 10
   target: "enemy"
-  effects:
-    - type: "dispel"
-      category: "magic_buff"
-      count: 5 # 驱散5个状态
+  versions:
+    - version_id: "dispel_01"
+      name: "驱散"
+      description: "基础驱散，移除魔法增益效果。"
+      effects:
+        - type: "dispel"
+          category: "magic_buff"
+          count: 5
 
-poison_amplify_01:
-  name: 毒液强化
-  cost: {resource: "mana", amount: 15}
+# 毒液强化
+poison_amplify:
+  name: "毒液强化"
+  description: "强化目标身上的中毒效果。"
+  cost:
+    resource: "mana"
+    amount: 15
   target: "enemy"
-  effects:
-    - type: "amplify_poison"
-      amplify_amount: 2
+  versions:
+    - version_id: "poison_amplify_01"
+      name: "毒液强化"
+      description: "基础毒液强化，增加中毒层数。"
+      effects:
+        - type: "amplify_poison"
+          amplify_amount: 2
 
-poison_detonate_01:
-  name: 毒爆术
-  cost: {resource: "mana", amount: 25}
+# 毒爆术
+poison_detonate:
+  name: "毒爆术"
+  description: "引爆目标身上的中毒效果，造成大量伤害。"
+  cost:
+    resource: "mana"
+    amount: 25
   target: "enemy"
-  effects:
-    - type: "detonate_poison"
-      damage_multiplier: 2.0
+  versions:
+    - version_id: "poison_detonate_01"
+      name: "毒爆术"
+      description: "基础毒爆术，引爆中毒效果造成伤害。"
+      effects:
+        - type: "detonate_poison"
+          damage_multiplier: 2.0

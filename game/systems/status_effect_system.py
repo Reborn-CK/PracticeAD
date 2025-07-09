@@ -154,13 +154,13 @@ class StatusEffectSystem:
             container = entity.get_component(StatusEffectContainerComponent)
             if not container: continue
 
-            # 特殊处理中毒效果
-            poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+            # 特殊处理中毒效果（所有版本）
+            poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
             if poison_effects:
                 self._tick_poison_effects(entity, poison_effects, container)
 
             # 处理其他效果
-            other_effects = [e for e in container.effects if e.effect_id != "poison_01"]
+            other_effects = [e for e in container.effects if not e.effect_id.startswith("poison_")]
             self._tick_normal_effects(entity, other_effects, container)
         
         # 状态效果结算完成后，触发UI刷新事件
@@ -214,7 +214,7 @@ class StatusEffectSystem:
         container = payload.target.get_component(StatusEffectContainerComponent)
         if not container: return
         
-        poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+        poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
         if not poison_effects: return
         
         # 所有层增加
@@ -239,7 +239,7 @@ class StatusEffectSystem:
         container = payload.target.get_component(StatusEffectContainerComponent)
         if not container: return
         
-        poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+        poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
         if not poison_effects: return
         
         # 计算总伤害：每个中毒状态造成基础伤害 × 层数

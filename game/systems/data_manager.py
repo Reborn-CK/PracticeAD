@@ -50,6 +50,48 @@ class DataManager:
                     result['description'] = passive_info.get('description', '')
                     return result
         return None
+
+    def get_spell_version_data(self, version_id: str) -> dict | None:
+        """根据 version_id获取法术版本数据"""
+        for spell_id, spell_info in self.spell_data.items():
+            for version in spell_info.get('versions', []):
+                if version.get('version_id') == version_id:
+                    # 将基础信息和版本信息合并
+                    result = {
+                        'name': version.get('name', spell_info.get('name', spell_id)),
+                        'description': version.get('description', spell_info.get('description', '')),
+                        'cost': spell_info.get('cost', {}),
+                        'target': spell_info.get('target', 'enemy'),
+                        'can_be_reflected': spell_info.get('can_be_reflected', False),
+                        'can_crit': spell_info.get('can_crit', False),
+                        'effects': version.get('effects', []),
+                        'interactions': version.get('interactions', [])
+                    }
+                    return result
+        return None
+
+    def get_status_effect_version_data(self, version_id: str) -> dict | None:
+        """根据 version_id获取状态效果版本数据"""
+        for effect_id, effect_info in self.status_effect_data.items():
+            for version in effect_info.get('versions', []):
+                if version.get('version_id') == version_id:
+                    # 将基础信息和版本信息合并
+                    result = {
+                        'name': version.get('name', effect_info.get('name', effect_id)),
+                        'description': version.get('description', effect_info.get('description', '')),
+                        'category': effect_info.get('category', 'uncategorized'),
+                        'logic': effect_info.get('logic', ''),
+                        'stacking': effect_info.get('stacking', 'refresh_duration'),
+                        'duration': version.get('duration'),
+                        'stack_count': version.get('stack_count'),
+                        'stack_intensity': version.get('stack_intensity'),
+                        'poison_number': version.get('poison_number'),
+                        'max_stacks': version.get('max_stacks'),
+                        'context': version.get('context', {})
+                    }
+                    return result
+        return None
+
     def get_character_data(self, character_id: str):
         """获取角色数据"""
         return self.character_data.get(character_id)
@@ -59,7 +101,17 @@ class DataManager:
         return self.passive_data.get(passive_id)
 
     def get_spell_data(self, spell_id: str):
-        return self.spell_data.get(spell_id)
+        """获取法术数据 - 保持向后兼容性"""
+        # 首先尝试直接获取（旧格式）
+        if spell_id in self.spell_data:
+            return self.spell_data[spell_id]
+        
+        # 然后尝试作为版本ID获取（新格式）
+        version_data = self.get_spell_version_data(spell_id)
+        if version_data:
+            return version_data
+        
+        return None
 
     def get_spell_cost(self, spell_id: str) -> float:
         """获取法术消耗"""
@@ -72,7 +124,17 @@ class DataManager:
         return cost_data  # 兼容旧格式
 
     def get_status_effect_data(self, status_effect_id: str):
-        return self.status_effect_data.get(status_effect_id)
+        """获取状态效果数据 - 保持向后兼容性"""
+        # 首先尝试直接获取（旧格式）
+        if status_effect_id in self.status_effect_data:
+            return self.status_effect_data[status_effect_id]
+        
+        # 然后尝试作为版本ID获取（新格式）
+        version_data = self.get_status_effect_version_data(status_effect_id)
+        if version_data:
+            return version_data
+        
+        return None
 
     def get_spell_target_type(self, spell_id: str) -> str:
         """获取法术目标类型"""

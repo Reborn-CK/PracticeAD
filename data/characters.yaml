@@ -24,7 +24,10 @@ hero:
   
   # 技能列表
   spells:
+    - "normal_attack_01"
+    - "normal_attack_02"
     - "fireball_01"
+    - "fireball_02"
     - "vampiric_touch_01"
     - "heal_01"
     - "heal_02"
@@ -63,5 +66,5 @@ boss:
   
   # 技能列表
   spells:
-    - "poison_cloud_01"
+    - "fireball_01"
     #- "curse_of_slowness_01" 
