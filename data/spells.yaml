@@ -3,6 +3,7 @@ fireball_01:
   cost: {resource: "mana", amount: 10}
   target: "enemy"
   can_be_reflected: true
+  can_crit: true
   effects:
     - type: "damage"
       amount: 15
@@ -66,14 +67,15 @@ heal_02:
     - type: "heal"
       amount: 20
       heal_type: "light"
-    - type: "overheal"
-      conversion_rate: 0.5
+      overheal_to_shield:
+        conversion_ratio: 0.5
 
 thunderbolt_01:
   name: 雷霆术
   cost: {resource: "mana", amount: 100}
   target: "enemy"
   can_be_reflected: true
+  can_crit: true
   effects:
     - type: "damage"
       amount: 160
@@ -102,23 +104,24 @@ wind_01:
   name: 风刃术
   cost: {resource: "mana", amount: 10}
   target: "enemy"
+  can_be_reflected: true
   effects:
     - type: "damage"
       amount: 20
       damage_type: "wind"
-      is_reflection: true
   interactions:
     - type: "on_damage_deal"
       target_has_effect: "burning_01"
       action: "extend_duration"
       context:
-        extend_duration: 2
+        extend_duration: 10
         message: "**法术联动**: {source_spell_name} 助长了 {target_name} 的[燃烧]效果, 持续时间延长了!"
 
 vampiric_touch_01:
   name: 吸血术
   cost: {resource: "mana", amount: 10}
   target: "enemy"
+  can_be_reflected: true
   effects:
     - type: "damage"
       amount: 50
@@ -141,6 +144,33 @@ purify_01:
     - type: "dispel"
       category: "magic_debuff"
       count: 1
+
+purify_02:
+  name: 净化2
+  cost: {resource: "mana", amount: 10}
+  target: "ally"
+  effects:
+    - type: "dispel"
+      category: "all"
+      count: 5 # 净化5个状态
+
+purify_03:
+  name: 净化3
+  cost: {resource: "mana", amount: 10}
+  target: "ally"
+  effects:
+    - type: "reduce_debuffs"
+      reduce_stack_count: 1
+      reduce_duration_count: 1
+
+dispel_01:
+  name: 驱散
+  cost: {resource: "mana", amount: 10}
+  target: "enemy"
+  effects:
+    - type: "dispel"
+      category: "magic_buff"
+      count: 5 # 驱散5个状态
 
 poison_amplify_01:
   name: 毒液强化

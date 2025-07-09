@@ -4,6 +4,7 @@ from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import StatQueryPayload, HealRequestPayload, UIMessagePayload, DamageRequestPayload, GainShieldPayload
 from ..core.entity import Entity
+from ..core.pipeline import EffectExecutionContext
 from .status_effect import StatusEffect
 
 class EffectLogic(ABC):
@@ -80,9 +81,8 @@ class StatModificationLogic(EffectLogic):
 
 class OverhealConversionLogic(EffectLogic):
     """溢疗转换效果"""
-    def on_heal(self, payload: HealRequestPayload, effect: StatusEffect, event_bus: EventBus):
-        if payload.overheal_conversion_rate is not None:
-            rate = effect.context.get("conversion_rate", 0)
+    def on_heal(self,payload: 'EffectExecutionContext', effect: StatusEffect, event_bus: EventBus):
+        if rate := effect.context.get("conversion_rate", 0):
             shield_gain = payload.overheal_amount * rate
             if shield_gain > 0:
                 event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(

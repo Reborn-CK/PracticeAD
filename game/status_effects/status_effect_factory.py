@@ -38,7 +38,7 @@ class StatusEffectFactory:
         return StatusEffect(
             effect_id=effect_id,
             name=effect_data.get('name', '未命名效果'),
-            duration=effect_data.get('duration', 1),
+            duration=effect_data.get('duration', None),
             category=effect_data.get("category", "uncategorized"),
             stacking=effect_data.get("stacking", "refresh_duration"),
             max_stacks=effect_data.get("max_stacks", 1),

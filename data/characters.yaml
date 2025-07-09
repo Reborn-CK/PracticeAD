@@ -13,6 +13,8 @@ hero:
     max_mana: 500
     speed: 60
     defense: 0
+    crit_chance: 1.0
+    crit_damage_multiplier: 2.0
   
   # 被动能力 (引用passives.yaml中的配置)
   passives:
@@ -34,6 +36,8 @@ hero:
     - "curse_of_slowness_01"
     - "haste_01"
     - "purify_01"
+    - "purify_02"
+    - "purify_03"
     - "poison_amplify_01"
     - "poison_detonate_01"
 
@@ -49,6 +53,8 @@ boss:
     max_mana: 500
     speed: 50
     defense: 100
+    crit_chance: 0.0
+    crit_damage_multiplier: 2.0
   
   # 被动能力 (引用passives.yaml中的配置)
   passives:
@@ -57,5 +63,5 @@ boss:
   
   # 技能列表
   spells:
-    - "fireball_01"
+    - "poison_cloud_01"
     #- "curse_of_slowness_01" 

@@ -3,11 +3,12 @@ from ..core.enums import EventName
 from ..core.payloads import (CastSpellRequestPayload, ManaCostRequestPayload, DamageRequestPayload,
                              HealRequestPayload, ApplyStatusEffectRequestPayload, DispelRequestPayload,
                              LogRequestPayload, UIMessagePayload, AmplifyPoisonRequestPayload,
-                             DetonatePoisonRequestPayload)
+                             DetonatePoisonRequestPayload, ReduceDebuffsRequestPayload)
 from .data_manager import DataManager
 from ..status_effects.status_effect_factory import StatusEffectFactory
 from ..status_effects.status_effect import StatusEffect
 from ..status_effects.effect_logic import DamageOverTimeEffect, StatModificationLogic, OverhealConversionLogic, EffectLogic
+from ..core.components import CritComponent
 
 EFFECT_LOGIC_MAP = {
     "dot": DamageOverTimeEffect,
@@ -46,20 +47,16 @@ class SpellCastSystem:
         
         # 处理所有法术效果
         effects = self.data_manager.get_spell_effects(payload.spell_id)
-        conversion_rate = None
-        
-        # 先检查是否有overheal效果
-        for effect in effects:
-            if effect.get('type') == "overheal":
-                conversion_rate = effect.get("conversion_rate")
-                break
         
         for effect in effects:
             effect_type = effect.get('type')
             
             if effect_type == "damage":
-                
-                self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
+                crit_comp = payload.caster.get_component(CritComponent)
+                crit_chance = crit_comp.crit_chance
+                crit_damage_multiplier = crit_comp.crit_damage_multiplier
+
+                damage_payload = DamageRequestPayload(
                     caster=payload.caster, 
                     target=payload.target, 
                     source_spell_id=payload.spell_id,
@@ -69,42 +66,32 @@ class SpellCastSystem:
                     damage_type=effect["damage_type"],
                     lifesteal_ratio=effect.get("lifesteal_ratio", 0),
                     is_reflection=effect.get("is_reflection", False),
-                    can_be_reflected=spell_data.get("can_be_reflected", False)
-                )))
+                    can_be_reflected=spell_data.get("can_be_reflected", False),
+
+                    can_crit=effect.get("can_crit", False),
+                    crit_chance=crit_chance,
+                    crit_damage_multiplier=crit_damage_multiplier
+                )
+                self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, damage_payload))
+
             elif effect_type == "heal":
-                self.event_bus.dispatch(GameEvent(EventName.HEAL_REQUEST, HealRequestPayload(
+                heal_payload = HealRequestPayload(
                     caster=payload.caster, target=payload.target, 
                     source_spell_id=payload.spell_id,
                     source_spell_name=spell_data["name"],
                     base_heal=effect["amount"], 
                     heal_type=effect["heal_type"],
-                    overheal_amount=0,
-                    overheal_conversion_rate=conversion_rate
-                )))
+
+                    overheal_to_shield_config=effect.get("overheal_to_shield")
+                )
+                self.event_bus.dispatch(GameEvent(EventName.HEAL_REQUEST, heal_payload))
+
             elif effect_type == "apply_status_effect":
                 status_effect_id = effect.get("status_effect_id")
                 if not status_effect_id: continue
 
                 new_effect = self.status_effect_factory.create_effect(status_effect_id, payload.caster)
 
-                # effect_data = self.data_manager.get_status_effect_data(status_effect_id)
-                # if not effect_data:
-                #     self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[SPELL]", f"**错误**: 状态效果 {status_effect_id} 不存在!")))
-                #     continue
-
-                # logic_str = effect_data.get("logic", "")
-                # logic_class = EFFECT_LOGIC_MAP.get(logic_str, EffectLogic)
-                # new_effect = StatusEffect(
-                #     effect_id= status_effect_id, 
-                #     name=effect_data['name'], 
-                #     duration=effect_data['duration'],
-                #     category=effect_data.get("category", "uncategorized"),
-                #     stacking=effect_data.get("stacking", "refresh_duration"),
-                #     max_stacks=effect_data.get("max_stacks", 1),
-                #     caster=payload.caster,
-                #     context=effect_data.get("context", {}),
-                #     logic=logic_class()
-                # )
                 if new_effect:
                     self.event_bus.dispatch(GameEvent(EventName.APPLY_STATUS_EFFECT_REQUEST, ApplyStatusEffectRequestPayload(
                         target=payload.target,
@@ -133,5 +120,13 @@ class SpellCastSystem:
                     caster=payload.caster,
                     source_spell_id=payload.spell_id,
                     source_spell_name=spell_data["name"]
+                )))
+            elif effect_type == "reduce_debuffs":
+                reduce_stack_count = effect.get("reduce_stack_count", 0)
+                reduce_duration_count = effect.get("reduce_duration_count", 0)
+                self.event_bus.dispatch(GameEvent(EventName.REDUCE_DEBUFFS_REQUEST, ReduceDebuffsRequestPayload(
+                    target=payload.target,
+                    reduce_stack_count=reduce_stack_count,
+                    reduce_duration_count=reduce_duration_count
                 )))
             # 可以在这里添加更多效果类型的处理

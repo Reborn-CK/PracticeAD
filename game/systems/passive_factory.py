@@ -1,11 +1,12 @@
 from typing import Dict, Any, List
-from ..core.components import (ResistanceComponent, GrievousWoundsComponent, ThornsComponent)
+from ..core.components import (ResistanceComponent, GrievousWoundsComponent, ThornsComponent, OverhealToShieldComponent)
 
 # 组件映射表，Key是YAML中的component名，Value是组件类
 COMPONENT_MAPPING = {
     'ResistanceComponent': ResistanceComponent,
     'GrievousWoundsComponent': GrievousWoundsComponent,
     'ThornsComponent': ThornsComponent,
+    'OverhealToShieldComponent': OverhealToShieldComponent,
     # 未来新增的被动组件在这里注册
 }
 

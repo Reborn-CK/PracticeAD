@@ -26,3 +26,4 @@ class EventName(Enum):
     DISPEL_REQUEST = auto()
     AMPLIFY_POISON_REQUEST = auto()
     DETONATE_POISON_REQUEST = auto()
+    REDUCE_DEBUFFS_REQUEST = auto()

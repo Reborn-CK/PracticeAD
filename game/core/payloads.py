@@ -52,9 +52,13 @@ class DamageRequestPayload:
     base_damage: float
     damage_type: str
     original_base_damage: Optional[float] = None
-    lifesteal_ratio: Optional[float] = None
+    lifesteal_ratio: Optional[float] = 0.0
     can_be_reflected: bool = False
     is_reflection: bool = False
+
+    can_crit: bool = False
+    crit_chance: float = 0.0
+    crit_damage_multiplier: float = 2.0
 
 @dataclass
 class HealRequestPayload:
@@ -64,8 +68,9 @@ class HealRequestPayload:
     source_spell_name: str
     base_heal: float
     heal_type: str
-    overheal_amount: float = 0.0
-    overheal_conversion_rate: Optional[float] = None
+    can_be_modified: bool = True
+
+    overheal_to_shield_config: Optional[dict] = None
 
 @dataclass
 class GainShieldPayload:
@@ -148,3 +153,9 @@ class DetonatePoisonRequestPayload:
 class StatusEffectsResolvedPayload:
     """状态效果结算完成事件的payload"""
     pass
+
+@dataclass
+class ReduceDebuffsRequestPayload:
+    target: Entity
+    reduce_stack_count: int
+    reduce_duration_count: int

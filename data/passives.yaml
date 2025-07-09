@@ -65,6 +65,21 @@ thorns:
       description: "反伤效果大。"
       values:
         thorns_percentage: 0.5
+
+overheal_to_shield:
+  name: "溢出治疗转护盾"
+  description: "将溢出治疗转化为护盾。"
+  effect:
+    component: "OverhealToShieldComponent"
+    attributes:
+      - name: "conversion_ratio"
+        type: "float"
+  versions:
+    - version_id: "overheal_to_shield_minor"
+      name: "初级溢出治疗转护盾"
+      description: "将溢出治疗转化为护盾。"
+      values:
+        conversion_ratio: 0.5
   
 
 

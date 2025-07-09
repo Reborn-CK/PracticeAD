@@ -64,6 +64,15 @@ class ResistanceComponent:
 class ThornsComponent:
     thorns_percentage: float
 
+@dataclass
+class CritComponent:
+    crit_chance: float = 0.0
+    crit_damage_multiplier: float = 2.0
+
+@dataclass
+class OverhealToShieldComponent:
+    conversion_ratio: float = 1.0
+
 # --- 状态标记组件 ---
 @dataclass
 class PlayerControlledComponent: pass

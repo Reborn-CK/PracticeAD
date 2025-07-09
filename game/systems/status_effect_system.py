@@ -4,7 +4,7 @@ from ..core.payloads import (ApplyStatusEffectRequestPayload, RemoveStatusEffect
                              UpdateStatusEffectsDurationRequestPayload, DispelRequestPayload,
                              StatQueryPayload, LogRequestPayload, UIMessagePayload, DamageRequestPayload,
                              AmplifyPoisonRequestPayload, DetonatePoisonRequestPayload,
-                             StatusEffectsResolvedPayload)
+                             StatusEffectsResolvedPayload, ReduceDebuffsRequestPayload)
 from ..core.components import StatusEffectContainerComponent, DeadComponent
 from ..status_effects.status_effect import StatusEffect
 
@@ -21,6 +21,7 @@ class StatusEffectSystem:
         self.event_bus.subscribe(EventName.STAT_QUERY, self.on_stat_query)
         self.event_bus.subscribe(EventName.AMPLIFY_POISON_REQUEST, self.on_amplify_poison)
         self.event_bus.subscribe(EventName.DETONATE_POISON_REQUEST, self.on_detonate_poison)
+        self.event_bus.subscribe(EventName.REDUCE_DEBUFFS_REQUEST, self.on_reduce_debuffs)
     
     def on_apply_effect(self, event: GameEvent):
         payload: ApplyStatusEffectRequestPayload = event.payload
@@ -95,12 +96,26 @@ class StatusEffectSystem:
         payload: DispelRequestPayload = event.payload
         container = payload.target.get_component(StatusEffectContainerComponent)
         if not container: return
-        effects_to_dispel = [e for e in container.effects if e.category == payload.category_to_dispel]
-        for i in range(min(payload.count, len(effects_to_dispel))):
-            effect = effects_to_dispel[i]
+        if payload.category_to_dispel == "all":
+            effects_to_dispel = list(container.effects)  # 复制一份，防止遍历时修改
+        else:
+            effects_to_dispel = [e for e in container.effects if e.category == payload.category_to_dispel]
+        
+        # 收集要移除的效果
+        removed_effects = []
+        for effect in effects_to_dispel[:payload.count]:
             effect.logic.on_remove(payload.target, effect, self.event_bus)
             container.effects.remove(effect)
-            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {payload.target.name} 的 {effect.name} 效果已移除")))
+            removed_effects.append(effect)
+        
+        # 整合播报消息
+        if removed_effects:
+            if len(removed_effects) == 1:
+                message = f"**状态效果**: {payload.target.name} 的 {removed_effects[0].name} 效果已移除"
+            else:
+                effect_names = [effect.name for effect in removed_effects]
+                message = f"**状态效果**: {payload.target.name} 的 {', '.join(effect_names)} 效果已移除"
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(message)))
     
     def on_stat_query(self, event: GameEvent):
         container = event.payload.entity.get_component(StatusEffectContainerComponent)
@@ -256,3 +271,62 @@ class StatusEffectSystem:
         self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
             f"**状态效果**: {payload.target.name} 的所有中毒效果已被引爆并移除"
         )))
+    
+    def on_reduce_debuffs(self, event: GameEvent):
+        """减少所有负面状态的层数或持续时间"""
+        payload: ReduceDebuffsRequestPayload = event.payload
+        container = payload.target.get_component(StatusEffectContainerComponent)
+        if not container: return
+        
+        # 获取所有负面状态效果
+        debuff_effects = [e for e in container.effects if e.category in ["physical_debuff", "magic_debuff", "elemental_debuff"]]
+        if not debuff_effects: return
+        
+        reduced_effects = []
+        removed_effects = []
+        
+        for effect in debuff_effects:
+            effect_reduced = False
+            
+            # 减少层数
+            if payload.reduce_stack_count > 0 and hasattr(effect, 'stack_count') and effect.stack_count > 0:
+                old_stack_count = effect.stack_count
+                effect.stack_count = max(0, effect.stack_count - payload.reduce_stack_count)
+                if effect.stack_count == 0:
+                    # 层数归0，移除效果
+                    effect.logic.on_remove(payload.target, effect, self.event_bus)
+                    container.effects.remove(effect)
+                    removed_effects.append(effect)
+                else:
+                    effect_reduced = True
+                    reduced_effects.append((effect, f"层数从{old_stack_count}减少到{effect.stack_count}"))
+            
+            # 减少持续时间
+            if payload.reduce_duration_count > 0 and effect.duration is not None:
+                old_duration = effect.duration
+                effect.duration = max(0, effect.duration - payload.reduce_duration_count)
+                if effect.duration == 0:
+                    # 持续时间归0，移除效果
+                    if effect not in removed_effects:  # 避免重复移除
+                        effect.logic.on_remove(payload.target, effect, self.event_bus)
+                        container.effects.remove(effect)
+                        removed_effects.append(effect)
+                else:
+                    effect_reduced = True
+                    if effect not in [e for e, _ in reduced_effects]:
+                        reduced_effects.append((effect, f"持续时间从{old_duration}减少到{effect.duration}"))
+        
+        # 播报结果
+        if removed_effects or reduced_effects:
+            messages = []
+            
+            if removed_effects:
+                removed_names = [effect.name for effect in removed_effects]
+                messages.append(f"移除了 {', '.join(removed_names)}")
+            
+            if reduced_effects:
+                reduced_names = [f"{effect.name}({desc})" for effect, desc in reduced_effects]
+                messages.append(f"减少了 {', '.join(reduced_names)}")
+            
+            message = f"**净化3**: {payload.target.name} 的负面状态被净化 - " + "，".join(messages)
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(message)))
