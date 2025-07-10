@@ -15,7 +15,7 @@ class Entity:
         component_name = component_type.__name__
         
         # 可以添加多个同类型组件的组件列表
-        multi_component_types = ['ResistanceComponent']
+        multi_component_types = ['ResistanceComponent', 'AttackTriggerPassiveComponent']
         
         if component_name in multi_component_types:  # 可以添加多个抗性组件
             if component_type not in self._component_lists:

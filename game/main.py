@@ -60,8 +60,8 @@ def main():
     passive_system = PassiveAbilitySystem(event_bus)
     world.add_system(passive_system)
     
-    # 然后创建战斗系统，并传入被动系统的引用
-    world.add_system(CombatResolutionSystem(event_bus, data_manager, passive_system))
+    # 然后创建战斗系统，并传入被动系统的引用和状态效果工厂
+    world.add_system(CombatResolutionSystem(event_bus, data_manager, passive_system, status_effect_factory))
 
     # --- 优先级200，死亡检查 ---
     world.add_system(DeadSystem(event_bus, world), priority=200)

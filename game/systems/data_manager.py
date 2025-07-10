@@ -62,8 +62,9 @@ class DataManager:
                         'description': version.get('description', spell_info.get('description', '')),
                         'cost': spell_info.get('cost', {}),
                         'target': spell_info.get('target', 'enemy'),
-                        'can_be_reflected': spell_info.get('can_be_reflected', False),
-                        'can_crit': spell_info.get('can_crit', False),
+                        'can_be_reflected': version.get('can_be_reflected', spell_info.get('can_be_reflected', False)),
+                        # 暴击配置优先级：versions.can_crit > versions.can_be_crit > spell.can_crit > spell.can_be_crit
+                        'can_crit': version.get('can_crit', spell_info.get('can_crit', spell_info.get('can_be_crit', False))),
                         'effects': version.get('effects', []),
                         'interactions': version.get('interactions', [])
                     }

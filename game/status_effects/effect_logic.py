@@ -58,13 +58,16 @@ class DamageOverTimeEffect(EffectLogic):
             total_damage = damage_per_round * stacks
 
         if total_damage > 0:
+            # 获取施法者名称，如果没有则显示"未知"
+            caster_name = effect.caster.name if effect.caster else "未知"
+            
             if effect.stack_count:
                 event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                    f"**持续伤害**: {target.name} 因为持续伤害 [{effect.name} x{stacks}] 受到 {total_damage:.1f} 点伤害"
+                    f"**持续伤害**: {target.name} 因为 {caster_name} 施加的持续伤害 [{effect.name} x{stacks}] 受到 {total_damage:.1f} 点伤害"
                 )))
             else:
                 event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                    f"**持续伤害**: {target.name} 因为持续伤害 [{effect.name}] 受到 {total_damage:.1f} 点伤害"
+                    f"**持续伤害**: {target.name} 因为 {caster_name} 施加的持续伤害 [{effect.name}] 受到 {total_damage:.1f} 点伤害"
                 )))
             event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                 caster=effect.caster or target,
@@ -74,7 +77,8 @@ class DamageOverTimeEffect(EffectLogic):
                 base_damage=total_damage,
                 damage_type=effect.context.get("damage_type", "pure"),
                 can_be_reflected=effect.context.get("can_be_reflected", False),
-                is_reflection=effect.context.get("is_reflection", False)
+                is_reflection=effect.context.get("is_reflection", False),
+                is_dot_damage=True  # 标记为持续伤害
             )))
 
 class StatModificationLogic(EffectLogic):
@@ -118,8 +122,11 @@ class PoisonDotEffect(EffectLogic):
         damage_per_round = effect.context.get("damage_per_round", 0)
         total_damage = damage_per_round  # 每个中毒状态造成基础伤害，与层数无关
         if total_damage > 0:
+            # 获取施法者名称，如果没有则显示"未知"
+            caster_name = effect.caster.name if effect.caster else "未知"
+            
             event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                f"**持续伤害**: {target.name} 因为持续伤害 [{effect.name}] 受到 {total_damage:.1f} 点伤害"
+                f"**持续伤害**: {target.name} 因为 {caster_name} 施加的持续伤害 [{effect.name}] 受到 {total_damage:.1f} 点伤害"
             )))
             event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                 caster=effect.caster or target,
@@ -129,7 +136,8 @@ class PoisonDotEffect(EffectLogic):
                 base_damage=total_damage,
                 damage_type=effect.context.get("damage_type", "pure"),
                 can_be_reflected=effect.context.get("can_be_reflected", False),
-                is_reflection=effect.context.get("is_reflection", False)
+                is_reflection=effect.context.get("is_reflection", False),
+                is_dot_damage=True  # 标记为持续伤害
             )))
 
     def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
@@ -193,8 +201,11 @@ class PoisonEffectLogic(EffectLogic):
         
         # 一次性播报所有中毒伤害
         if total_damage > 0:
+            # 获取施法者名称，如果没有则显示"未知"
+            caster_name = poison_effects[0].caster.name if poison_effects[0].caster else "未知"
+            
             event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                f"**持续伤害**: {target.name} 因为持续伤害 [{len(poison_effects)}个中毒状态] 受到 {total_damage:.1f} 点伤害"
+                f"**持续伤害**: {target.name} 因为 {caster_name} 施加的持续伤害 [{len(poison_effects)}个中毒状态] 受到 {total_damage:.1f} 点伤害"
             )))
             event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                 caster=poison_effects[0].caster or target,

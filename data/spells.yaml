@@ -6,20 +6,32 @@ normal_attack:
     resource: "mana"
     amount: 0
   target: "enemy"
+  can_be_reflected: true
+  can_be_crit: true
   versions:
     - version_id: "normal_attack_01"
       name: "普通攻击1"
       description: "基础普通攻击，造成基础伤害。"
+      can_be_reflected: true
       effects:
         - type: "damage"
-          amount: 10
+          amount: 100
           damage_type: "physical"
     - version_id: "normal_attack_02"
       name: "普通攻击2"
       description: "中级普通攻击，造成基础伤害。"
+      can_be_reflected: true
       effects:
         - type: "damage"
           amount: 20
+          damage_type: "physical"
+    - version_id: "normal_attack_03"
+      name: "普通攻击3,不被反伤"
+      description: "高级普通攻击，造成基础伤害。"
+      can_be_reflected: false
+      effects:
+        - type: "damage"
+          amount: 25
           damage_type: "physical"
 
 # 火球术

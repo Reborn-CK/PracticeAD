@@ -43,7 +43,7 @@ class StatusEffectOverhealToShieldHandler(BaseProcessor):
             if container:
                 for effect in container.effects:
                     effect.logic.on_heal(context, effect, self.event_bus)
-                context.overheal_amount = 0.0
+                # 注意：这里不设置 context.overheal_amount = 0.0，让后续处理器也能处理
         
         return context
 
@@ -106,5 +106,8 @@ class OverhealToShieldHandler(BaseProcessor):
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
                 "[PASSIVE]", f"✨ {context.target.name} 的 {context.overheal_amount:.1f} 点溢出治疗转化为了 {shield_to_add:.1f} 点护盾！"
             )))
+            
+            # 6. 【关键】消耗掉溢出治疗，防止后续处理器重复转化
+            context.overheal_amount = 0.0
             
         return context

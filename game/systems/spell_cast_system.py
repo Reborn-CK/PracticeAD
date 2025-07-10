@@ -68,7 +68,8 @@ class SpellCastSystem:
                     is_reflection=effect.get("is_reflection", False),
                     can_be_reflected=spell_data.get("can_be_reflected", False),
 
-                    can_crit=effect.get("can_crit", False),
+                    # 暴击配置优先级：versions.can_crit > versions.can_be_crit > spell.can_crit > spell.can_be_crit
+                    can_crit=spell_data.get("can_crit", False),
                     crit_chance=crit_chance,
                     crit_damage_multiplier=crit_damage_multiplier
                 )

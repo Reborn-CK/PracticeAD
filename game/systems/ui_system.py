@@ -113,51 +113,97 @@ class UISystem:
         
         # 检查是否是反伤伤害
         is_thorns_reflection = payload.log_reflection
+        is_dot_damage = getattr(payload, 'is_dot_damage', False)
         
         # 构建基础信息
         if is_thorns_reflection:
             base_info = f"{payload.caster.name} 的反伤对 {payload.target.name}"
+        elif is_dot_damage:
+            base_info = f"{payload.target.name} 因 {payload.caster.name} 施加的 {payload.source_spell} 战斗战斗持续伤害"
         else:
             base_info = f"{payload.caster.name} 对 {payload.target.name} 使用了 {payload.source_spell}"
         
         # 获取最终效果
-        final_hp_change = next((r for r in payload.resource_changes if r.resource_name == 'health'), None)
-        shield_change = next((r for r in payload.resource_changes if r.resource_name == 'shield'), None)
+        final_hp_change = next((r for r in payload.resource_changes if r['resource_name'] == 'health'), None)
+        shield_change = next((r for r in payload.resource_changes if r['resource_name'] == 'shield'), None)
         
-        # 构建完整信息
-        if final_hp_change:
-            if final_hp_change.change_amount < 0:
-                # 伤害情况
-                damage_amount = -final_hp_change.change_amount
-                if is_thorns_reflection:
-                    # 反伤伤害的特殊播报
-                    print(f"**反伤**: {base_info} 造成了 {damage_amount:.0f} 点反伤伤害！")
-                else:
-                    # 普通伤害播报
-                    damage_info = f"造成了 {damage_amount:.0f} 点伤害"
-                    if payload.shield_blocked > 0:
-                        print(f"**战斗**: {base_info}，护盾抵消了 {payload.shield_blocked:.0f} 点伤害，{damage_info}！")
-                    else:
-                        print(f"**战斗**: {base_info}，{damage_info}！")
-            elif final_hp_change.change_amount > 0:
-                # 治疗情况
-                heal_info = f"恢复了 {final_hp_change.change_amount:.0f} 点生命值"
-                if shield_change and shield_change.change_amount > 0:
-                    print(f"**战斗**: {base_info}，{heal_info}，溢出治疗转化为 {shield_change.change_amount:.0f} 点护盾！")
-                else:
-                    print(f"**战斗**: {base_info}，{heal_info}！")
+        # 根据效果变化信息构建播报内容
+        if payload.no_effect_produced:
+            # 没有产生任何效果
+            if is_dot_damage:
+                print(f"**战斗持续伤害**: {base_info}，但没有产生任何效果！")
             else:
-                # 0治疗情况 - 可能是溢疗术
-                if shield_change and shield_change.change_amount > 0:
-                    print(f"**战斗**: {base_info}，溢出治疗转化为 {shield_change.change_amount:.0f} 点护盾！")
-                else:
-                    print(f"**战斗**: {base_info}，伤害为0, 生命值不变，法术效果已生效！")
-        elif shield_change and shield_change.change_amount > 0:
-            # 只有护盾变化的情况
-            print(f"**战斗**: {base_info}，获得 {shield_change.change_amount:.0f} 点护盾！")
+                print(f"**战斗**: {base_info}，但没有产生任何效果！")
         else:
-            # 无生命值变化
-            print(f"**战斗**: {base_info}，生命值未变化，法术效果已生效！")
+            # 有实际效果产生，显示具体变化
+            effect_parts = []
+            
+            # 生命值变化
+            if payload.health_changed and final_hp_change:
+                if final_hp_change['change_amount'] < 0:
+                    # 伤害情况
+                    damage_amount = -final_hp_change['change_amount']
+                    old_hp = final_hp_change['current_value'] - final_hp_change['change_amount']
+                    new_hp = final_hp_change['current_value']
+                    if is_thorns_reflection:
+                        effect_parts.append(f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)")
+                    else:
+                        damage_info = f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)"
+                        if payload.shield_blocked > 0:
+                            effect_parts.append(f"{payload.target.name} 护盾抵消 {payload.shield_blocked:.0f} 点伤害，{damage_info}")
+                        else:
+                            effect_parts.append(damage_info)
+                elif final_hp_change['change_amount'] > 0:
+                    # 治疗情况
+                    old_hp = final_hp_change['current_value'] - final_hp_change['change_amount']
+                    new_hp = final_hp_change['current_value']
+                    effect_parts.append(f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (恢复 {final_hp_change['change_amount']:.0f} 点)")
+            
+            # 护盾变化
+            if payload.shield_changed:
+                if payload.shield_change_amount > 0:
+                    old_shield = payload.shield_before
+                    new_shield = payload.shield_before + payload.shield_change_amount
+                    effect_parts.append(f"{payload.target.name} 护盾 {old_shield:.0f} → {new_shield:.0f} (增加 {payload.shield_change_amount:.0f} 点)")
+                elif payload.shield_change_amount < 0:
+                    old_shield = payload.shield_before
+                    new_shield = payload.shield_before + payload.shield_change_amount
+                    effect_parts.append(f"{payload.target.name} 护盾 {old_shield:.0f} → {new_shield:.0f} (减少 {abs(payload.shield_change_amount):.0f} 点)")
+                else:
+                    # 护盾被消耗但没有具体数值变化记录
+                    effect_parts.append(f"{payload.target.name} 护盾被消耗")
+            
+            # 状态效果变化
+            if payload.new_status_effects:
+                # 获取目标当前的状态效果
+                status_container = payload.target.get_component(StatusEffectContainerComponent)
+                if status_container and status_container.effects:
+                    # 显示新获得的状态效果
+                    new_effects = []
+                    for effect in status_container.effects:
+                        if effect.stacking == "stack_intensity":
+                            new_effects.append(f"{effect.name} x{effect.stack_count} ({effect.duration}回合)")
+                        else:
+                            new_effects.append(f"{effect.name} ({effect.duration}回合)")
+                    
+                    if new_effects:
+                        effect_parts.append(f"{payload.target.name} 获得状态效果: {', '.join(new_effects)}")
+                else:
+                    effect_parts.append(f"{payload.target.name} 获得新的状态效果")
+            
+            # 组合所有效果信息
+            if effect_parts:
+                effects_str = "，".join(effect_parts)
+                if is_dot_damage:
+                    print(f"**战斗持续伤害**: {base_info}，{effects_str}！")
+                else:
+                    print(f"**战斗**: {base_info}，{effects_str}！")
+            else:
+                # 有变化但无法具体描述的情况
+                if is_dot_damage:
+                    print(f"**战斗持续伤害**: {base_info}，产生了效果！")
+                else:
+                    print(f"**战斗**: {base_info}，产生了效果！")
         
         # 显示被动触发信息
         if payload.passive_triggers:

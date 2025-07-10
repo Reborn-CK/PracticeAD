@@ -66,6 +66,121 @@ thorns:
       values:
         thorns_percentage: 0.5
 
+# 攻击触发被动效果
+attack_trigger_passive:
+  name: "攻击触发被动"
+  description: "攻击时触发的被动效果。"
+  effect:
+    component: "AttackTriggerPassiveComponent"
+    attributes:
+      - name: "passive_id"
+        type: "string"
+      - name: "trigger_chance"
+        type: "float"
+      - name: "effect_type"
+        type: "string"
+      - name: "effect_value"
+        type: "float"
+      - name: "effect_target"
+        type: "string"
+      - name: "effect_name"
+        type: "string"
+      - name: "damage_type"
+        type: "string"
+      - name: "status_effect_id"
+        type: "string"
+      - name: "use_damage_ratio"
+        type: "bool"
+      - name: "damage_ratio"
+        type: "float"
+      - name: "trigger_condition"
+        type: "string"
+  
+  versions:
+    - version_id: "heal_on_attack"
+      name: "攻击治疗"
+      description: "攻击时有概率恢复生命值。"
+      values:
+        passive_id: "heal_on_attack"
+        trigger_chance: 1.0 
+        effect_type: "heal"
+        effect_value: 30.0
+        effect_target: "self"
+        effect_name: "攻击治疗"
+        damage_type: "pure"
+        status_effect_id: ""
+        use_damage_ratio: false
+        damage_ratio: 0.0
+        trigger_condition: "always"
+        is_passive_damage: true
+      
+    - version_id: "fire_damage_on_attack"
+      name: "火焰攻击"
+      description: "攻击时额外造成火焰伤害。"
+      values:
+        passive_id: "fire_damage_on_attack"
+        trigger_chance: 1.0
+        effect_type: "damage"
+        effect_value: 8.0
+        effect_target: "target"
+        effect_name: "攻击附加火焰伤害"
+        damage_type: "fire"
+        status_effect_id: ""
+        use_damage_ratio: false
+        damage_ratio: 0.0
+        trigger_condition: "always"
+        is_passive_damage: true
+        
+    - version_id: "poison_on_attack"
+      name: "毒击"
+      description: "攻击时有概率施加中毒效果。"
+      values:
+        passive_id: "poison_on_attack"
+        trigger_chance: 0.4
+        effect_type: "status_effect"
+        effect_value: 0.0
+        effect_target: "target"
+        effect_name: "攻击附加中毒效果"
+        damage_type: "pure"
+        status_effect_id: "poison_01"
+        use_damage_ratio: false
+        damage_ratio: 0.0
+        trigger_condition: "always"
+        
+    - version_id: "lifesteal_ratio_on_attack"
+      name: "比例吸血"
+      description: "攻击时基于造成的伤害恢复生命值。"
+      values:
+        passive_id: "lifesteal_ratio_on_attack"
+        trigger_chance: 1.0
+        effect_type: "heal"
+        effect_value: 0.0
+        effect_target: "self"
+        effect_name: "攻击附加比例吸血"
+        damage_type: "pure"
+        status_effect_id: ""
+        use_damage_ratio: true
+        damage_ratio: 0.5
+        trigger_condition: "on_damage"
+        is_passive_damage: true
+        
+    - version_id: "fire_damage_ratio_on_attack"
+      name: "火焰比例攻击"
+      description: "攻击时基于造成的伤害额外造成火焰伤害。"
+      values:
+        passive_id: "fire_damage_ratio_on_attack"
+        trigger_chance: 0.6
+        effect_type: "damage"
+        effect_value: 0.0
+        effect_target: "target"
+        effect_name: "攻击附加火焰伤害(比例)"
+        damage_type: "fire"
+        status_effect_id: ""
+        use_damage_ratio: true
+        damage_ratio: 0.5
+        trigger_condition: "on_damage"
+        is_passive_damage: true
+        
 overheal_to_shield:
   name: "溢出治疗转护盾"
   description: "将溢出治疗转化为护盾。"

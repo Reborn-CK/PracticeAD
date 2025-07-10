@@ -55,6 +55,8 @@ class DamageRequestPayload:
     lifesteal_ratio: Optional[float] = 0.0
     can_be_reflected: bool = False
     is_reflection: bool = False
+    is_passive_damage: bool = False  # 标记是否为被动伤害，防止无限循环
+    is_dot_damage: bool = False  # 标记是否为持续伤害
 
     can_crit: bool = False
     crit_chance: float = 0.0
@@ -108,6 +110,13 @@ class EffectResolutionPayload:
     shield_blocked: float = 0.0
     passive_triggers: list = field(default_factory=list)
     log_reflection: Optional[bool] = None
+    health_changed: bool = False
+    shield_changed: bool = False
+    shield_change_amount: float = 0.0  # 护盾变化的具体数值
+    shield_before: float = 0.0  # 护盾变化前的值
+    new_status_effects: bool = False
+    no_effect_produced: bool = False
+    is_dot_damage: bool = False  # 新增：是否为持续伤害
 
 @dataclass
 class UIMessagePayload:
