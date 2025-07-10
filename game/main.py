@@ -40,7 +40,7 @@ def main():
     # log_system.hide_tag("[SPELL]")   # 隐藏施法日志
     # log_system.hide_tag("[AI]")      # 隐藏AI决策日志
     # log_system.hide_tag("[SYSTEM]")  # 隐藏系统日志
-    log_system.set_enabled(True)    # 完全关闭日志系统
+    log_system.set_enabled(True)    # 启用日志系统
     
     world.add_system(UISystem(event_bus, world)) # UI系统需要world来渲染状态
     world.add_system(StatusEffectSystem(event_bus, world))

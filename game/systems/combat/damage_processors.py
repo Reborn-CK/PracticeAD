@@ -24,16 +24,34 @@ class BaseProcessor(Processor[EffectExecutionContext]):
 class CritHandler(BaseProcessor):
     """处理暴击"""
     def _process(self, context: EffectExecutionContext) -> EffectExecutionContext:
-        if not context.metadata.get("can_crit", False):
+        can_crit = context.metadata.get("can_crit", False)
+        crit_chance = context.metadata.get("crit_chance", 0.0)
+        crit_damage_multiplier = context.metadata.get("crit_damage_multiplier", 1.5)
+        random_roll = random.random()
+        compare_tip = f"(判定: random_roll={random_roll:.3f} {'<' if random_roll < crit_chance else '≥'} crit_chance={crit_chance:.3f}，{'会暴击' if random_roll < crit_chance else '不会暴击'})"
+        log_prefix = f"[暴击判定] can_crit={can_crit}, crit_chance={crit_chance:.3f}, crit_damage_multiplier={crit_damage_multiplier:.2f}, random_roll={random_roll:.3f} {compare_tip}"
+
+        if not can_crit:
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                "[COMBAT]", f"{log_prefix} → 未暴击 - 原因：该技能不支持暴击"
+            )))
             return context
 
-        crit_chance = context.metadata.get("crit_chance", 0.0)
-        if random.random() < crit_chance:
-            crit_multiplier = context.metadata.get("crit_damage_multiplier", 1.5)
-            original_damage = context.current_value
-            context.current_value *= crit_multiplier
+        if crit_chance <= 0.0:
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                "[COMBAT]", f"💥 {context.source.name} 的攻击发生了暴击！伤害从 {original_damage:.1f} 提升至 {context.current_value:.1f} (x{crit_multiplier:.2f})！"
+                "[COMBAT]", f"{log_prefix} → 未暴击 - 原因：暴击率为 0%"
+            )))
+            return context
+
+        if random_roll < crit_chance:
+            original_damage = context.current_value
+            context.current_value *= crit_damage_multiplier
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                "[COMBAT]", f"{log_prefix} → 💥 暴击成功！伤害从 {original_damage:.1f} 提升至 {context.current_value:.1f} (x{crit_damage_multiplier:.2f})"
+            )))
+        else:
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                "[COMBAT]", f"{log_prefix} → 未暴击 - 原因：暴击判定失败 (暴击率: {crit_chance*100:.1f}%)"
             )))
         return context
 

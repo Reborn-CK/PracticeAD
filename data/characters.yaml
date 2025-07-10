@@ -13,7 +13,7 @@ hero:
     max_mana: 500
     speed: 60
     defense: 0
-    crit_chance: 1.0
+    crit_chance: 0.1
     crit_damage_multiplier: 2.0
   
   # 被动能力 (引用passives.yaml中的配置)
