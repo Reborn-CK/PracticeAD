@@ -2,7 +2,7 @@ from ...core.pipeline import Processor, EffectExecutionContext
 from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import LogRequestPayload
-from ...core.components import GrievousWoundsComponent, OverhealToShieldComponent, DefenseComponent
+from ...core.components import GrievousWoundsComponent, OverhealToShieldComponent, ShieldComponent
 from ...core.components import StatusEffectContainerComponent
 
 class BaseProcessor(Processor[EffectExecutionContext]):
@@ -65,10 +65,10 @@ class SkillOverhealToShieldHandler(BaseProcessor):
         
         if shield_to_add > 0:
             # 4. 为目标增加护盾
-            if defense_comp := context.target.get_component(DefenseComponent):
-                defense_comp.defense_value += shield_to_add
+            if shield_comp := context.target.get_component(ShieldComponent):
+                shield_comp.shield_value += shield_to_add
             else:
-                context.target.add_component(DefenseComponent(defense_value=shield_to_add))
+                context.target.add_component(ShieldComponent(shield_value=shield_to_add))
             
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
                 "[SKILL]", f"📜 技能 [{context.metadata.get('source_spell_name')}] 的效果将 {context.overheal_amount:.1f} 点溢出治疗转化为了 {shield_to_add:.1f} 点护盾！"
@@ -95,12 +95,12 @@ class OverhealToShieldHandler(BaseProcessor):
         shield_to_add = context.overheal_amount * passive_comp.conversion_ratio
 
         if shield_to_add > 0:
-            # 4. 为目标增加护盾 (DefenseComponent)
-            if defense_comp := context.target.get_component(DefenseComponent):
-                defense_comp.defense_value += shield_to_add
+            # 4. 为目标增加护盾 (ShieldComponent)
+            if shield_comp := context.target.get_component(ShieldComponent):
+                shield_comp.shield_value += shield_to_add
             else:
-                # 如果目标没有DefenseComponent，可以动态添加一个
-                context.target.add_component(DefenseComponent(defense_value=shield_to_add))
+                # 如果目标没有ShieldComponent，可以动态添加一个
+                context.target.add_component(ShieldComponent(shield_value=shield_to_add))
             
             # 5. 派发日志事件
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(

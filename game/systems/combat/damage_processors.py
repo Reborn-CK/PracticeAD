@@ -3,7 +3,7 @@ from ...core.pipeline import Processor, EffectExecutionContext
 from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import LogRequestPayload, HealRequestPayload, DamageRequestPayload, ApplyStatusEffectRequestPayload
-from ...core.components import DefenseComponent, ResistanceComponent, ThornsComponent, AttackTriggerPassiveComponent
+from ...core.components import ShieldComponent, ResistanceComponent, ThornsComponent, AttackTriggerPassiveComponent
 
 class BaseProcessor(Processor[EffectExecutionContext]):
     """处理器的基类，方便统一注入EventBus"""
@@ -55,18 +55,18 @@ class CritHandler(BaseProcessor):
             )))
         return context
 
-class DefenseHandler(BaseProcessor):
+class ShieldHandler(BaseProcessor):
     """处理护盾/防御值减免"""
     def _process(self, context: EffectExecutionContext) -> EffectExecutionContext:
         target = context.target
-        if defense_comp := target.get_component(DefenseComponent):
-            if defense_comp.defense_value > 0:
-                blocked = min(context.current_value, defense_comp.defense_value)
+        if shield_comp := target.get_component(ShieldComponent):
+            if shield_comp.shield_value > 0:
+                blocked = min(context.current_value, shield_comp.shield_value)
                 context.current_value -= blocked
                 # 实际减少护盾值
-                defense_comp.defense_value -= blocked
+                shield_comp.shield_value -= blocked
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                    "[COMBAT]", f"🛡️ {target.name} 的护盾抵消了 {blocked:.1f} 点伤害，剩余护盾: {defense_comp.defense_value:.1f}"
+                    "[COMBAT]", f"🛡️ {target.name} 的护盾抵消了 {blocked:.1f} 点伤害，剩余护盾: {shield_comp.shield_value:.1f}"
                 )))
         return context
 

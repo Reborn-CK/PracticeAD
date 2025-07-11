@@ -2,7 +2,7 @@ from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import (RoundStartPayload, UIMessagePayload, UIDisplayOptionsPayload,
                              EffectResolutionPayload, StatQueryPayload)
-from ..core.components import (HealthComponent, ManaComponent, DefenseComponent, SpeedComponent,
+from ..core.components import (HealthComponent, ManaComponent, ShieldComponent, SpeedComponent,
                               StatusEffectContainerComponent, DeadComponent)
 from ..core.entity import Entity
 
@@ -28,12 +28,12 @@ class UISystem:
             else:
                 hp = entity.get_component(HealthComponent)
                 mana = entity.get_component(ManaComponent)
-                defense = entity.get_component(DefenseComponent)
+                shield = entity.get_component(ShieldComponent)
                 speed = entity.get_component(SpeedComponent)
                 
                 hp_str = f"HP: {hp.hp:.0f}/{hp.max_hp:.0f}" if hp else "HP: N/A"
                 mana_str = f"Mana: {mana.mana:.0f}/{mana.max_mana:.0f}" if mana else "Mana: N/A"
-                shield_str = f"Shield: {defense.defense_value:.0f}" if defense else ""
+                shield_str = f"Shield: {shield.shield_value:.0f}" if shield else ""
                 
                 # 获取考虑了状态效果后的最终速度值
                 if speed:

@@ -12,7 +12,7 @@ hero:
     mana: 500
     max_mana: 500
     speed: 60
-    defense: 0
+    shield: 0
     crit_chance: 0.1
     crit_damage_multiplier: 2.0
   
@@ -32,6 +32,7 @@ hero:
     - "normal_attack_02"
     - "normal_attack_03"
     - "heal_01"
+    
 
 boss:
   name: "BOSS"
@@ -44,7 +45,7 @@ boss:
     mana: 500
     max_mana: 500
     speed: 50
-    defense: 100
+    shield: 100
     crit_chance: 0.0
     crit_damage_multiplier: 2.0
   

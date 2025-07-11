@@ -1,6 +1,6 @@
 from ..core.entity import Entity
 from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent,
-                              DefenseComponent, StatusEffectContainerComponent, PlayerControlledComponent,
+                              ShieldComponent, StatusEffectContainerComponent, PlayerControlledComponent,
                               AIControlledComponent, CritComponent, OverhealToShieldComponent)
 from ..core.event_bus import EventBus
 from ..core.enums import EventName
@@ -30,7 +30,7 @@ class CharacterFactory:
         entity.add_component(HealthComponent(entity, self.event_bus, stats['hp'], stats['max_hp']))
         entity.add_component(ManaComponent(mana=stats['mana'], max_mana=stats['max_mana']))
         entity.add_component(SpeedComponent(speed=stats['speed']))
-        entity.add_component(DefenseComponent(defense_value=stats['defense']))
+        entity.add_component(ShieldComponent(shield_value=stats['shield']))
         entity.add_component(StatusEffectContainerComponent())
         entity.add_component(SpellListComponent(spells=character_data['spells']))
         entity.add_component(CritComponent(crit_chance=stats['crit_chance'], crit_damage_multiplier=stats['crit_damage_multiplier']))

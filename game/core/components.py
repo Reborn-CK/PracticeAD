@@ -44,8 +44,8 @@ class SpellListComponent:
     spells: List[str]
 
 @dataclass
-class DefenseComponent:
-    defense_value: float
+class ShieldComponent:
+    shield_value: float
 
 @dataclass
 class StatusEffectContainerComponent:

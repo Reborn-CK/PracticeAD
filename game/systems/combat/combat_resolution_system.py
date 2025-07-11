@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING
 from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import DamageRequestPayload, HealRequestPayload, LogRequestPayload, EffectResolutionPayload, GainShieldPayload
-from ...core.components import HealthComponent, DefenseComponent, StatusEffectContainerComponent
+from ...core.components import HealthComponent, ShieldComponent, StatusEffectContainerComponent
 from ...core.pipeline import Pipeline, EffectExecutionContext
 
 # --- 导入新的处理器 ---
-from .damage_processors import CritHandler, DefenseHandler, ResistanceHandler, LifestealHandler, ThornsHandler, AttackTriggerPassiveHandler
+from .damage_processors import CritHandler, ShieldHandler, ResistanceHandler, LifestealHandler, ThornsHandler, AttackTriggerPassiveHandler
 from .heal_processors import GrievousWoundsHandler, OverhealToShieldHandler, SkillOverhealToShieldHandler, StatusEffectOverhealToShieldHandler
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ class CombatResolutionSystem:
         # 伤害计算阶段 (顺序很重要：暴击 -> 护盾 -> 抗性)
         damage_calculation_processors = [
             CritHandler(self.event_bus),
-            DefenseHandler(self.event_bus),
+            ShieldHandler(self.event_bus),
             ResistanceHandler(self.event_bus),
         ]
         # 造成伤害后阶段 (吸血、反伤、攻击触发被动)
@@ -61,7 +61,7 @@ class CombatResolutionSystem:
         
         # 记录攻击前的状态，用于判断是否有实际效果
         target_health_before = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_before = payload.target.get_component(DefenseComponent).defense_value if payload.target.get_component(DefenseComponent) else 0
+        target_shield_before = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
         target_status_effects_before = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
         
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
@@ -103,7 +103,7 @@ class CombatResolutionSystem:
         
         # 记录攻击后的状态
         target_health_after = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_after = payload.target.get_component(DefenseComponent).defense_value if payload.target.get_component(DefenseComponent) else 0
+        target_shield_after = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
         target_status_effects_after = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
         
         # 检查是否有实际效果产生
@@ -161,7 +161,7 @@ class CombatResolutionSystem:
         
         # 记录治疗前的状态，用于判断是否有实际效果
         target_health_before = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_before = payload.target.get_component(DefenseComponent).defense_value if payload.target.get_component(DefenseComponent) else 0
+        target_shield_before = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
         target_status_effects_before = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
         
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
@@ -222,7 +222,7 @@ class CombatResolutionSystem:
         
         # 记录治疗后的状态
         target_health_after = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_after = payload.target.get_component(DefenseComponent).defense_value if payload.target.get_component(DefenseComponent) else 0
+        target_shield_after = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
         target_status_effects_after = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
         
         # 检查是否有实际效果产生
@@ -273,8 +273,8 @@ class CombatResolutionSystem:
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[HEAL]", "--- 治疗结算完毕 ---")))
     def on_gain_shield_request(self, event: GameEvent):
         payload: GainShieldPayload = event.payload
-        if (defense_comp := payload.target.get_component(DefenseComponent)):
-            defense_comp.defense_value += payload.amount
+        if (shield_comp := payload.target.get_component(ShieldComponent)):
+            shield_comp.shield_value += payload.amount
         else:
-            defense_comp = payload.target.add_component(DefenseComponent(defense_value=payload.amount))
+            shield_comp = payload.target.add_component(ShieldComponent(shield_value=payload.amount))
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[COMBAT]", f"来源[{payload.source}] 获得了 {payload.amount:.1f} 点护盾")))
