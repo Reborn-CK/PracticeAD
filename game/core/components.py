@@ -1,15 +1,14 @@
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
-from .entity import Entity
-from .event_bus import EventBus, GameEvent
 
-if TYPE_CHECKING:
-    from ..status_effects.status_effect import StatusEffect
+from game.core.entity import Entity
+from game.core.event_bus import EventBus, GameEvent
+from game.status_effects.status_effect import StatusEffect
 
 # --- 核心组件 ---
 @dataclass
 class HealthComponent:
-    def __init__(self, owner: Entity, event_bus: EventBus, hp: float, max_hp: float):
+    def __init__(self, owner: 'Entity', event_bus: 'EventBus', hp: float, max_hp: float):
         self._owner = owner
         self._event_bus = event_bus
         self._hp = hp

@@ -37,7 +37,8 @@ class UISystem:
                 
                 # 获取考虑了状态效果后的最终速度值
                 if speed:
-                    final_speed = self._get_final_speed(entity, speed.speed)
+                    #final_speed = self._get_final_speed(entity, speed.speed)
+                    final_speed = entity.get_final_stat("speed", speed.speed)
                     speed_str = f"Speed: {final_speed:.0f}"
                 else:
                     speed_str = ""
@@ -75,12 +76,6 @@ class UISystem:
             print(status_str)
         print("-" * 40)
     
-    def _get_final_speed(self, entity: 'Entity', base_speed: float) -> float: # type: ignore
-        """获取考虑了状态效果后的最终速度值"""
-        query = StatQueryPayload(entity=entity, stat_name="speed", base_value=base_speed, current_value=base_speed)
-        self.event_bus.dispatch(GameEvent(EventName.STAT_QUERY, query))
-        return query.current_value
-
     def on_round_start(self, event: GameEvent):
         payload: RoundStartPayload = event.payload
         print(f"\n{'='*15} 回合 {payload.round_number} {'='*15}")

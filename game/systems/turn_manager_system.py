@@ -11,11 +11,6 @@ class TurnManagerSystem:
         self.round_number = 0
         self.turn_queue = []
 
-    def get_final_stat(self, entity: 'Entity', stat_name: str, base_value: float) -> float: # type: ignore
-        query = StatQueryPayload(entity, stat_name, base_value, base_value)
-        self.event_bus.dispatch(GameEvent(EventName.STAT_QUERY, query))
-        return query.current_value
-
     def update(self):
         if not self.turn_queue:
             self.round_number += 1
@@ -24,7 +19,8 @@ class TurnManagerSystem:
                 self.world.is_running = False
                 return
 
-            living_entities.sort(key=lambda e: self.get_final_stat(e, "speed", e.get_component(SpeedComponent).speed), reverse=True)
+            #living_entities.sort(key=lambda e: self.get_final_stat(e, "speed", e.get_component(SpeedComponent).speed), reverse=True)
+            living_entities.sort(key=lambda e: e.get_final_stat("speed", e.get_component(SpeedComponent).speed), reverse=True)
             self.turn_queue = living_entities
             
             # 先触发状态效果结算事件

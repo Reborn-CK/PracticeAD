@@ -1,20 +1,22 @@
 from dataclasses import dataclass, field
-from typing import Optional, Any, List
-from .entity import Entity
-from .enums import EventName
+from typing import Optional, List, TYPE_CHECKING
+from game.core.enums import EventName
+
+if TYPE_CHECKING:
+    from game.core.entity import Entity
 
 # --- Event Payloads ---
 @dataclass
 class ApplyStatusEffectRequestPayload:
-    target: Entity
+    target: 'Entity'
     effect: 'StatusEffect' # type: ignore
 @dataclass
 class RemoveStatusEffectRequestPayload:
-    target: Entity
+    target: 'Entity'
     effect_id: str
 @dataclass
 class UpdateStatusEffectsDurationRequestPayload:
-    target: Entity
+    target: 'Entity'
     effect_id: str
     change: int
 
@@ -29,24 +31,24 @@ class LogRequestPayload:
 
 @dataclass
 class ActionRequestPayload:
-    acting_entity: Entity
+    acting_entity: 'Entity'
 
 @dataclass
 class CastSpellRequestPayload:
-    caster: Entity
-    target: Entity
+    caster: 'Entity'
+    target: 'Entity'
     spell_id: str
 
 @dataclass
 class ManaCostRequestPayload:
-    entity: Entity
+    entity: 'Entity'
     cost: float
     is_affordable: bool = True
 
 @dataclass
 class DamageRequestPayload:
-    caster: Entity
-    target: Entity
+    caster: 'Entity'
+    target: 'Entity'
     source_spell_id: str
     source_spell_name: str
     base_damage: float
@@ -64,8 +66,8 @@ class DamageRequestPayload:
 
 @dataclass
 class HealRequestPayload:
-    caster: Entity
-    target: Entity
+    caster: 'Entity'
+    target: 'Entity'
     source_spell_id: str
     source_spell_name: str
     base_heal: float
@@ -76,21 +78,21 @@ class HealRequestPayload:
 
 @dataclass
 class GainShieldPayload:
-    target: Entity
+    target: 'Entity'
     source: str
     amount: float
 
 @dataclass
 class HealthChangePayload:
-    entity: Entity
+    entity: 'Entity'
     old_hp: float
     new_hp: float
     max_hp: float
 
 @dataclass
 class OverhealRequestPayload:
-    caster: Entity
-    target: Entity
+    caster: 'Entity'
+    target: 'Entity'
     source_spell: str
     conversion_rate: float
 
@@ -103,8 +105,8 @@ class ResourceChangeEntry:
 
 @dataclass
 class EffectResolutionPayload:
-    caster: Entity
-    target: Entity
+    caster: 'Entity'
+    target: 'Entity'
     source_spell: str
     resource_changes: list = field(default_factory=list)
     shield_blocked: float = 0.0
@@ -131,30 +133,30 @@ class UIDisplayOptionsPayload:
 
 @dataclass
 class StatQueryPayload:
-    entity: Entity
+    entity: 'Entity'
     stat_name: str
     base_value: float
     current_value: float
 
 @dataclass
 class DispelRequestPayload:
-    target: Entity
+    target: 'Entity'
     category_to_dispel: str
     count: int
 
 @dataclass
 class AmplifyPoisonRequestPayload:
-    target: Entity
+    target: 'Entity'
     amplify_amount: int
-    caster: Entity
+    caster: 'Entity'
     source_spell_id: str
     source_spell_name: str
 
 @dataclass
 class DetonatePoisonRequestPayload:
-    target: Entity
+    target: 'Entity'
     damage_multiplier: float
-    caster: Entity
+    caster: 'Entity'
     source_spell_id: str
     source_spell_name: str
 
@@ -165,6 +167,6 @@ class StatusEffectsResolvedPayload:
 
 @dataclass
 class ReduceDebuffsRequestPayload:
-    target: Entity
+    target: 'Entity'
     reduce_stack_count: int
     reduce_duration_count: int

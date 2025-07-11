@@ -207,8 +207,8 @@ class AttackTriggerPassiveHandler(BaseProcessor):
         
         # 计算伤害数值
         if passive_comp.use_damage_ratio:
-            # 使用伤害比例模式：基于初始伤害值计算（即使被护盾抵消也能造成额外伤害）
-            damage_amount = context.initial_value * passive_comp.damage_ratio
+            # 使用伤害比例模式：基于实际造成伤害值计算
+            damage_amount = context.current_value * passive_comp.damage_ratio
         else:
             # 使用固定数值模式：即使攻击被护盾完全抵消也能造成伤害
             damage_amount = passive_comp.effect_value
@@ -217,7 +217,7 @@ class AttackTriggerPassiveHandler(BaseProcessor):
             # 显示不同的日志信息
             if passive_comp.use_damage_ratio:
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                    "[PASSIVE]", f"⚡ {context.source.name} 的 {passive_comp.effect_name} 对 {target.name} 造成了额外 {damage_amount:.1f} 点伤害 (基于初始伤害的 {passive_comp.damage_ratio*100:.0f}%)"
+                    "[PASSIVE]", f"⚡ {context.source.name} 的 {passive_comp.effect_name} 对 {target.name} 造成了额外 {damage_amount:.1f} 点伤害 (基于实际伤害的 {passive_comp.damage_ratio*100:.0f}%)"
                 )))
             else:
                 # 固定数值模式，即使攻击被护盾抵消也能触发
@@ -251,8 +251,8 @@ class AttackTriggerPassiveHandler(BaseProcessor):
         
         # 计算治疗数值
         if passive_comp.use_damage_ratio:
-            # 使用伤害比例模式：基于初始伤害值计算（即使被护盾抵消也能吸血）
-            heal_amount = context.initial_value * passive_comp.damage_ratio
+            # 使用伤害比例模式：基于实际造成伤害值计算
+            heal_amount = context.current_value * passive_comp.damage_ratio
         else:
             # 使用固定数值模式：即使攻击被护盾完全抵消也能治疗
             heal_amount = passive_comp.effect_value
@@ -261,7 +261,7 @@ class AttackTriggerPassiveHandler(BaseProcessor):
             # 显示不同的日志信息
             if passive_comp.use_damage_ratio:
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                    "[PASSIVE]", f"💚 {context.source.name} 的 {passive_comp.effect_name} 为 {target.name} 恢复了 {heal_amount:.1f} 点生命 (基于初始伤害的 {passive_comp.damage_ratio*100:.0f}%)"
+                    "[PASSIVE]", f"💚 {context.source.name} 的 {passive_comp.effect_name} 为 {target.name} 恢复了 {heal_amount:.1f} 点生命 (基于实际伤害的 {passive_comp.damage_ratio*100:.0f}%)"
                 )))
             else:
                 # 固定数值模式，即使攻击被护盾抵消也能触发

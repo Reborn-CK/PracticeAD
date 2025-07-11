@@ -1,14 +1,24 @@
 from typing import Any, TYPE_CHECKING
+from game.core.payloads import StatQueryPayload
+from game.core.event_bus import EventName, GameEvent
+from game.core.event_bus import EventBus
 
 if TYPE_CHECKING:
     from .components import ResistanceComponent
 
 class Entity:
-    def __init__(self, name: str):
+    def __init__(self, name: str, event_bus: 'EventBus'): 
         self.name = name
+        self.event_bus = event_bus
         self._components = {}  # 存储单个组件
         self._component_lists = {}  # 存储多个同类型组件
     
+    def get_final_stat(self, stat_name: str, base_value: float) -> float:
+        """通过事件总线查询考虑所有效果后的最终属性值"""
+        query = StatQueryPayload(self, stat_name, base_value,current_value=base_value)
+        self.event_bus.dispatch(GameEvent(EventName.STAT_QUERY, query))
+        return query.current_value
+        
     def add_component(self, c: Any): 
         # 对于某些组件类型，允许多个实例
         component_type = type(c)

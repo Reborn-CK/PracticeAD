@@ -291,7 +291,7 @@ purify:
           count: 1
     - version_id: "purify_02"
       name: "净化2"
-      description: "高级净化，移除所有负面效果。"
+      description: "高级净化，移除<count>个负面效果。"
       effects:
         - type: "dispel"
           category: "all"

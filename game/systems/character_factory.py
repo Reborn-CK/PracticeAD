@@ -23,7 +23,7 @@ class CharacterFactory:
             raise ValueError(f"未找到角色配置: {character_id}")
         
         # 创建实体
-        entity = world.add_entity(Entity(character_data['name']))
+        entity = world.add_entity(Entity(character_data['name'], self.event_bus))
         
         # 添加基础组件
         stats = character_data['stats']

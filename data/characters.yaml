@@ -32,6 +32,24 @@ hero:
     - "normal_attack_02"
     - "normal_attack_03"
     - "heal_01"
+    - "fireball_01"
+    - "fireball_02"
+    - "poison_cloud_01"
+    - "poison_cloud_02"
+    - "curse_of_slowness_01"
+    - "haste_01"
+    - "combust_01"
+    - "heal_01"
+    - "heal_02"
+    - "thunderbolt_01"
+    - "snowball_01"
+    - "vampiric_touch_01"
+    - "wind_01"
+    - "blessing_stance_01"
+    - "purify_01"
+    - "dispel_01"
+    - "poison_amplify_01"
+    - "poison_detonate_01"
     
 
 boss:
@@ -56,5 +74,5 @@ boss:
   
   # 技能列表
   spells:
-     - "fireball_01"
-    #- "curse_of_slowness_01" 
+    #- "poison_cloud_01"
+    - "curse_of_slowness_01" 
