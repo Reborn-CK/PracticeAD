@@ -1,7 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional, TypeVar, Generic
+from typing import Any, Optional, TypeVar, Generic, Protocol, TYPE_CHECKING
 from .entity import Entity
-T = TypeVar('T')
+
+if TYPE_CHECKING:
+    from .entity import Entity
+
+class CancellableContext(Protocol):
+    """定义了可取消上下文对象的协议"""
+    is_cancelled: bool
+
+T = TypeVar('T', bound=CancellableContext)
 
 class EffectExecutionContext:
     """
@@ -47,43 +55,7 @@ class Pipeline(Generic[T]):
         执行管线。
         """
         for processor in self.processors:
-            if hasattr(context, 'is_cancelled') and context.is_cancelled:
+            if context.is_cancelled:  # 现在类型检查器知道 context 有 is_cancelled 属性
                 break
             context = processor.process(context)
         return context
-
-
-# from abc import ABC, abstractmethod
-# from typing import List, Any, Dict
-# from game.core.entity import Entity
-
-# class EffectExecutionContext:
-#     def __init__(self, source: 'Entity', target: 'Entity', effect_type: str, initial_value: float, **kwargs):
-#         self.source = source
-#         self.target = target
-#         self.effect_type = effect_type
-#         self.initial_value = float(initial_value)
-#         self.current_value = float(initial_value)
-#         self.is_cancelled: bool = False
-#         self.metadata: Dict[str, Any] = {}
-#         self.metadata.update(kwargs)
-
-#     def cancel_effect(self):
-#         self.is_cancelled = True
-#         self.current_value = 0
-
-# class Processor(ABC):
-#     @abstractmethod
-#     def process(self, context: EffectExecutionContext) -> None:
-#         pass
-
-# class Pipeline:
-#     def __init__(self, processors: List[Processor]):
-#         self._processors = processors
-
-#     def execute(self, context: EffectExecutionContext) -> EffectExecutionContext:
-#         for processor in self._processors:
-#             processor.process(context)
-#             if context.is_cancelled:
-#                 break
-#         return context

@@ -73,24 +73,26 @@ class InteractionSystem:
         """根据action类型执行不同的交互逻辑"""
         action = interaction_data.get("action")
         context = interaction_data.get("context", {})
+        damage = 0  # 初始化damage变量
 
         if action == "consume_and_damage":
-            damage=0
             if context.get("damage_source") == "remaining_dot_damage":
                 dot_damage = target_effect.context.get("damage_per_round", 0)
-                remaining_duration = target_effect.duration
+                remaining_duration = target_effect.duration if target_effect.duration is not None else 0
                 damage = dot_damage * remaining_duration
             
             if damage > 0:
+                spell_data = self.data_manager.get_spell_data(source_spell_id)
+                spell_name = spell_data.get('name', '燃烬引爆') if spell_data else '燃烬引爆'
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
-                    "[Interaction]", f"[法术联动] {self.data_manager.get_spell_data(source_spell_id).get('name', '燃烬引爆')} 消耗 {target_effect.effect_id} 造成 {damage:.1f} 伤害"
+                    "[Interaction]", f"[法术联动] {spell_name} 消耗 {target_effect.effect_id} 造成 {damage:.1f} 伤害"
                 )))
                 #派发伤害
                 self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
                     caster=caster, 
                     target=target, 
                     source_spell_id=source_spell_id, 
-                    source_spell_name=self.data_manager.get_spell_data(source_spell_id).get('name', '燃烬引爆'),
+                    source_spell_name=spell_name,
                     base_damage=damage, 
                     damage_type=context.get("damage_type", "unknown"),
                 )))
@@ -132,11 +134,12 @@ class InteractionSystem:
                 )))
 
         if (message_template := context.get("message")):
-            spell_name = self.data_manager.get_spell_data(source_spell_id).get("name") if source_spell_id else "法术联动"
+            spell_data = self.data_manager.get_spell_data(source_spell_id)
+            spell_name = spell_data.get("name") if spell_data and source_spell_id else "法术联动"
             formatted_message = message_template.format(
                 caster_name=caster.name,
                 source_spell_name=spell_name,
                 target_name=target.name,
-                damage=damage_payload.base_damage if damage_payload else 0
+                damage=damage_payload.base_damage if damage_payload else damage  # 使用正确的damage值
             )
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(formatted_message)))

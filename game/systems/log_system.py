@@ -1,3 +1,4 @@
+from typing import Optional, Set
 from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import LogRequestPayload
@@ -7,7 +8,7 @@ class LogSystem:
     负责接收并打印所有带标签的内部日志，供开发者调试使用。
     支持全局开关和按标签过滤。
     """
-    def __init__(self, event_bus: EventBus, enabled: bool = True, hidden_tags: set = None):
+    def __init__(self, event_bus: EventBus, enabled: bool = True, hidden_tags: Optional[Set[str]] = None):
         self.event_bus = event_bus
         self.enabled = enabled  # 全局开关
         self.hidden_tags = hidden_tags or set()  # 隐藏的标签集合

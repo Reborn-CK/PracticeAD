@@ -12,9 +12,11 @@ class EventName(Enum):
     CAST_SPELL_REQUEST = auto()
     MANA_COST_REQUEST = auto()
     DAMAGE_REQUEST = auto()
+    DAMAGE_CALCULATION = auto()  # 新增：伤害计算事件
     HEAL_REQUEST = auto()
     HEALTH_CHANGED = auto()
     GAIN_SHIELD_REQUEST = auto()
+    ENTITY_DIED = auto()  # 新增：实体死亡事件
 
     APPLY_STATUS_EFFECT_REQUEST = auto()
     REMOVE_STATUS_EFFECT_REQUEST = auto()

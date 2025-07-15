@@ -10,7 +10,7 @@ class StatusEffect:
     """代表一个具体的Buff或Debuff实例"""
     effect_id: str
     name: str
-    duration: int
+    duration: Optional[int] = None
     category: str = "uncategorized"
     stacking: str = "refresh_duration"
     max_stacks: int = 1

@@ -116,9 +116,28 @@ class EffectResolutionPayload:
     shield_changed: bool = False
     shield_change_amount: float = 0.0  # 护盾变化的具体数值
     shield_before: float = 0.0  # 护盾变化前的值
-    new_status_effects: bool = False
+    new_status_effects: list = field(default_factory=list)  # 修改为list类型
     no_effect_produced: bool = False
     is_dot_damage: bool = False  # 新增：是否为持续伤害
+    effect_produced: bool = False  # 新增：是否有效果产生
+
+    def add_resource_change(self, resource_name: str, change_amount: float, current_value: float, max_value: Optional[float] = None):
+        """添加资源变化记录"""
+        self.resource_changes.append({
+            'resource_name': resource_name,
+            'change_amount': change_amount,
+            'current_value': current_value,
+            'max_value': max_value
+        })
+
+    def finalize(self):
+        """完成效果解析，计算是否有实际效果产生"""
+        self.effect_produced = (
+            self.health_changed or 
+            self.shield_changed or 
+            len(self.new_status_effects) > 0 or
+            any(abs(change['change_amount']) > 0 for change in self.resource_changes)
+        )
 
 @dataclass
 class UIMessagePayload:

@@ -60,9 +60,11 @@ class UISystem:
                     other_effects = [e for e in container.effects if e.effect_id != "poison_01"]
                     for e in other_effects:
                         if e.stacking == "stack_intensity":
-                            effects_list.append(f"{e.name} x{e.stack_count} ({e.duration}回合)")
+                            duration_str = f"({e.duration}回合)" if e.duration is not None else "(永久)"
+                            effects_list.append(f"{e.name} x{e.stack_count} {duration_str}")
                         else:
-                            effects_list.append(f"{e.name} ({e.duration}回合)")
+                            duration_str = f"({e.duration}回合)" if e.duration is not None else "(永久)"
+                            effects_list.append(f"{e.name} {duration_str}")
                     
                     status_effects_str = f" | 状态: " + ", ".join(effects_list)
 

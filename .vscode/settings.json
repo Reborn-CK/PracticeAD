@@ -1,0 +1,7 @@
+{
+  "code-runner.executorMap": {
+    "python": "source ~/miniconda3/etc/profile.d/conda.sh && conda activate GameEnv && python"
+  },
+  "python.defaultInterpreterPath": "/home/rebornkang/miniconda3/envs/GameEnv/bin/python",
+  "code-runner.runInTerminal": true
+}

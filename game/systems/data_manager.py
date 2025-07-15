@@ -160,3 +160,16 @@ class DataManager:
     def get_spell_interactions(self, spell_id: str) -> list:
         spell_data = self.get_spell_data(spell_id)
         return spell_data.get('interactions',[]) if spell_data else []
+
+    def get_all_spell_ids(self) -> list:
+        """获取所有法术ID列表"""
+        spell_ids = []
+        for spell_id, spell_info in self.spell_data.items():
+            # 添加基础法术ID
+            spell_ids.append(spell_id)
+            # 添加所有版本ID
+            for version in spell_info.get('versions', []):
+                version_id = version.get('version_id')
+                if version_id:
+                    spell_ids.append(version_id)
+        return spell_ids

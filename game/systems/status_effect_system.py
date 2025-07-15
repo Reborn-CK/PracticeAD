@@ -64,10 +64,12 @@ class StatusEffectSystem:
                     logic=effect.logic
                 )
                 container.effects.append(new_poison_effect)
-                new_poison_effect.logic.on_apply(target, new_poison_effect, self.event_bus)
+                if new_poison_effect.logic:
+                    new_poison_effect.logic.on_apply(target, new_poison_effect, self.event_bus)
         else:
             # 回退到默认逻辑
             self._apply_normal_effect(target, effect, container)
+    
     
     def _apply_normal_effect(self, target, effect, container):
         """应用普通效果的标准逻辑"""
@@ -138,7 +140,7 @@ class StatusEffectSystem:
         container = payload.target.get_component(StatusEffectContainerComponent)
         if container:
             effect = next((e for e in container.effects if e.effect_id == payload.effect_id), None)
-            if effect:
+            if effect and effect.duration is not None:
                 effect.duration += payload.change
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{payload.target.name}] 状态效果 {payload.effect_id} 的持续时间更新为 {effect.duration} 回合")))
 
@@ -199,10 +201,12 @@ class StatusEffectSystem:
         """结算普通效果"""
         for effect in list(effects):
             effect.logic.on_tick(entity, effect, self.event_bus)
-            effect.duration -= 1
+            # 只对有持续时间的效果进行倒计时
+            if effect.duration is not None:
+                effect.duration -= 1
 
         # 移除已过期的状态效果
-        expired_effects = [e for e in effects if e.duration <= 0]
+        expired_effects = [e for e in effects if e.duration is not None and e.duration <= 0]
         for expired_effect in expired_effects:
             expired_effect.logic.on_remove(entity, expired_effect, self.event_bus)
             container.effects.remove(expired_effect)

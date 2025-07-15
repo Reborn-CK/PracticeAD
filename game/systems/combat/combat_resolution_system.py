@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
 from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import DamageRequestPayload, HealRequestPayload, LogRequestPayload, EffectResolutionPayload, GainShieldPayload
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..passive_ability_system import PassiveAbilitySystem
 
 class CombatResolutionSystem:
-    def __init__(self, event_bus: EventBus, data_manager: 'DataManager' = None, passive_system: 'PassiveAbilitySystem' = None, status_effect_factory=None):
+    def __init__(self, event_bus: EventBus, data_manager: Optional['DataManager'] = None, passive_system: Optional['PassiveAbilitySystem'] = None, status_effect_factory=None):
         self.event_bus = event_bus
         self.data_manager = data_manager
         self.passive_system = passive_system
@@ -48,8 +48,8 @@ class CombatResolutionSystem:
             SkillOverhealToShieldHandler(self.event_bus),
             OverhealToShieldHandler(self.event_bus)
         ]
-        self.heal_pipeline = Pipeline(processors=heal_calculation_processors)
-        self.post_heal_pipeline = Pipeline(processors=post_heal_processors)
+        self.heal_pipeline = Pipeline(processors=heal_calculation_processors)  # type: ignore
+        self.post_heal_pipeline = Pipeline(processors=post_heal_processors)  # type: ignore
 
         # --- 3. 订阅事件 ---
         event_bus.subscribe(EventName.DAMAGE_REQUEST, self.on_damage_request)
@@ -60,9 +60,13 @@ class CombatResolutionSystem:
         payload: DamageRequestPayload = event.payload
         
         # 记录攻击前的状态，用于判断是否有实际效果
-        target_health_before = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_before = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
-        target_status_effects_before = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
+        health_comp_before = payload.target.get_component(HealthComponent)
+        shield_comp_before = payload.target.get_component(ShieldComponent)
+        status_comp_before = payload.target.get_component(StatusEffectContainerComponent)
+        
+        target_health_before = health_comp_before.hp if health_comp_before else 0
+        target_shield_before = shield_comp_before.shield_value if shield_comp_before else 0
+        target_status_effects_before = len(status_comp_before.effects) if status_comp_before else 0
         
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
             "[COMBAT]", f"--- 开始伤害结算: {payload.source_spell_name} from {payload.caster.name} to {payload.target.name} ---"
@@ -102,9 +106,13 @@ class CombatResolutionSystem:
         self.post_damage_pipeline.execute(resolved_context)
         
         # 记录攻击后的状态
-        target_health_after = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_after = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
-        target_status_effects_after = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
+        health_comp_after = payload.target.get_component(HealthComponent)
+        shield_comp_after = payload.target.get_component(ShieldComponent)
+        status_comp_after = payload.target.get_component(StatusEffectContainerComponent)
+        
+        target_health_after = health_comp_after.hp if health_comp_after else 0
+        target_shield_after = shield_comp_after.shield_value if shield_comp_after else 0
+        target_status_effects_after = len(status_comp_after.effects) if status_comp_after else 0
         
         # 检查是否有实际效果产生
         health_changed = target_health_before != target_health_after
@@ -121,11 +129,12 @@ class CombatResolutionSystem:
         # 添加生命值变化
         if health_changed:
             health_change_amount = target_health_after - target_health_before
+            max_hp = health_comp_after.max_hp if health_comp_after else None
             resource_changes.append({
                 'resource_name': 'health',
                 'change_amount': health_change_amount,
                 'current_value': target_health_after,
-                'max_value': payload.target.get_component(HealthComponent).max_hp if payload.target.get_component(HealthComponent) else None
+                'max_value': max_hp
             })
         
         # 添加护盾变化
@@ -149,7 +158,7 @@ class CombatResolutionSystem:
                 shield_changed=shield_changed,
                 shield_change_amount=shield_change_amount,
                 shield_before=target_shield_before,
-                new_status_effects=new_status_effects,
+                new_status_effects=[],  # 修复：传入空列表而不是布尔值
                 no_effect_produced=not has_effect,
                 is_dot_damage=getattr(payload, 'is_dot_damage', False)  # 新增
             )))
@@ -160,9 +169,13 @@ class CombatResolutionSystem:
         payload: HealRequestPayload = event.payload
         
         # 记录治疗前的状态，用于判断是否有实际效果
-        target_health_before = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_before = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
-        target_status_effects_before = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
+        health_comp_before = payload.target.get_component(HealthComponent)
+        shield_comp_before = payload.target.get_component(ShieldComponent)
+        status_comp_before = payload.target.get_component(StatusEffectContainerComponent)
+        
+        target_health_before = health_comp_before.hp if health_comp_before else 0
+        target_shield_before = shield_comp_before.shield_value if shield_comp_before else 0
+        target_status_effects_before = len(status_comp_before.effects) if status_comp_before else 0
         
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
             "[HEAL]", f"--- 开始治疗结算: {payload.source_spell_name} on {payload.target.name} ---"
@@ -210,7 +223,7 @@ class CombatResolutionSystem:
                 context.overheal_amount = overheal_amount
 
         # 施加治疗
-        if final_heal > 0:
+        if final_heal > 0 and health_comp:
             health_comp.hp += actual_heal
         if overheal_amount > 0:
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
@@ -221,9 +234,13 @@ class CombatResolutionSystem:
         self.post_heal_pipeline.execute(context)
         
         # 记录治疗后的状态
-        target_health_after = payload.target.get_component(HealthComponent).hp if payload.target.get_component(HealthComponent) else 0
-        target_shield_after = payload.target.get_component(ShieldComponent).shield_value if payload.target.get_component(ShieldComponent) else 0
-        target_status_effects_after = len(payload.target.get_component(StatusEffectContainerComponent).effects) if payload.target.get_component(StatusEffectContainerComponent) else 0
+        health_comp_after = payload.target.get_component(HealthComponent)
+        shield_comp_after = payload.target.get_component(ShieldComponent)
+        status_comp_after = payload.target.get_component(StatusEffectContainerComponent)
+        
+        target_health_after = health_comp_after.hp if health_comp_after else 0
+        target_shield_after = shield_comp_after.shield_value if shield_comp_after else 0
+        target_status_effects_after = len(status_comp_after.effects) if status_comp_after else 0
         
         # 检查是否有实际效果产生
         health_changed = target_health_before != target_health_after
@@ -240,11 +257,12 @@ class CombatResolutionSystem:
         # 添加生命值变化
         if health_changed:
             health_change_amount = target_health_after - target_health_before
+            max_hp = health_comp_after.max_hp if health_comp_after else None
             resource_changes.append({
                 'resource_name': 'health',
                 'change_amount': health_change_amount,
                 'current_value': target_health_after,
-                'max_value': payload.target.get_component(HealthComponent).max_hp if payload.target.get_component(HealthComponent) else None
+                'max_value': max_hp
             })
         
         # 添加护盾变化
@@ -266,7 +284,7 @@ class CombatResolutionSystem:
             shield_changed=shield_changed,
             shield_change_amount=shield_change_amount,
             shield_before=target_shield_before,
-            new_status_effects=new_status_effects,
+            new_status_effects=[],  # 修复：传入空列表而不是布尔值
             no_effect_produced=not has_effect,
             is_dot_damage=False  # 治疗不是持续伤害
         )))

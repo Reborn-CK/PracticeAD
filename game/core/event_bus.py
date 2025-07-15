@@ -1,6 +1,6 @@
 import traceback
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 from .enums import EventName
 
 @dataclass
@@ -10,9 +10,9 @@ class GameEvent:
 
 class EventBus:
     def __init__(self):
-        self._listeners: dict[EventName, list[callable]] = {}
+        self._listeners: dict[EventName, list[Callable]] = {}
 
-    def subscribe(self, event_name: EventName, listener: callable):
+    def subscribe(self, event_name: EventName, listener: Callable):
         if event_name not in self._listeners: self._listeners[event_name] = []
         self._listeners[event_name].append(listener)
 

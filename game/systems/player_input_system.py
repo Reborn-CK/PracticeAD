@@ -21,7 +21,12 @@ class PlayerInputSystem:
         actor = event.payload.acting_entity
         if actor.has_component(PlayerControlledComponent):
             spell_comp = actor.get_component(SpellListComponent)
-            options = [f"{self.data_manager.get_spell_data(sid)['name']} (MP: {self.data_manager.get_spell_cost(sid)})" for sid in spell_comp.spells]
+            options = []
+            for sid in spell_comp.spells:
+                spell_data = self.data_manager.get_spell_data(sid)
+                spell_name = spell_data.get('name', '未知法术') if spell_data else '未知法术'
+                spell_cost = self.data_manager.get_spell_cost(sid)
+                options.append(f"{spell_name} (MP: {spell_cost})")
             self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
                 prompt=f"[{actor.name}] 的回合，请选择法术:", options=options,
                 response_event_name=EventName.PLAYER_SPELL_CHOICE, context={"caster": actor}
@@ -38,10 +43,12 @@ class PlayerInputSystem:
         target_descriptions = []
 
         def get_desc(e: Entity)->str:
-            hp = e.get_component(HealthComponent)
+            hp_comp = e.get_component(HealthComponent)
             speed_comp = e.get_component(SpeedComponent)
-            final_speed = e.get_final_stat("speed", speed_comp.speed)
-            return f"{e.name} (HP: {hp.hp:.0f}, Speed: {final_speed:.0f})"
+            hp = hp_comp.hp if hp_comp else 0
+            speed = speed_comp.speed if speed_comp else 0
+            final_speed = e.get_final_stat("speed", speed)
+            return f"{e.name} (HP: {hp:.0f}, Speed: {final_speed:.0f})"
         
         if target_type == "enemy":
             available_targets = [e for e in self.world.entities if e.has_component(AIControlledComponent) and not e.has_component(DeadComponent)]
@@ -75,8 +82,9 @@ class PlayerInputSystem:
             return
         
         # 显示目标选择
+        spell_name = spell_data.get('name', '未知法术') if spell_data else '未知法术'
         self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
-            prompt=f"选择 {spell_data['name']} 的目标:", options=target_descriptions,
+            prompt=f"选择 {spell_name} 的目标:", options=target_descriptions,
             response_event_name=EventName.PLAYER_TARGET_CHOICE, 
             context={"caster": caster, "spell_id": spell_id, "available_targets": available_targets}
         )))

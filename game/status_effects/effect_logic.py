@@ -29,19 +29,24 @@ class EffectLogic(ABC):
             return False
             
         if existing_effect.stacking == "refresh_duration":
-            old_duration = existing_effect.duration
-            existing_effect.duration = max(existing_effect.duration, new_effect.duration)
-            event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                f"**状态效果**: {target.name} 的 {existing_effect.name} 效果持续时间刷新为 {existing_effect.duration} 回合"
-            )))
+            # 只对有持续时间的效果进行刷新
+            if existing_effect.duration is not None and new_effect.duration is not None:
+                old_duration = existing_effect.duration
+                existing_effect.duration = max(existing_effect.duration, new_effect.duration)
+                event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                    f"**状态效果**: {target.name} 的 {existing_effect.name} 效果持续时间刷新为 {existing_effect.duration} 回合"
+                )))
             return True
         elif existing_effect.stacking == "stack_intensity":
             old_stack_count = existing_effect.stack_count
             existing_effect.stack_count = min(existing_effect.stack_count + new_effect.stack_intensity, existing_effect.max_stacks)
-            existing_effect.duration = new_effect.duration
+            # 只对有持续时间的效果进行刷新
+            if new_effect.duration is not None:
+                existing_effect.duration = new_effect.duration
             added_stacks = existing_effect.stack_count - old_stack_count
+            duration_str = f"，持续时间刷新为 {existing_effect.duration} 回合" if existing_effect.duration is not None else ""
             event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
-                f"**状态效果**: {target.name} 的 {existing_effect.name} 效果增加了 {added_stacks} 层，现在总共 {existing_effect.stack_count} 层，持续时间刷新为 {existing_effect.duration} 回合"
+                f"**状态效果**: {target.name} 的 {existing_effect.name} 效果增加了 {added_stacks} 层，现在总共 {existing_effect.stack_count} 层{duration_str}"
             )))
             return True
         
