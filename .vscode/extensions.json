@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.pylance",
+    "ms-python.black-formatter",
+    "ms-python.flake8",
+    "ms-python.isort",
+    "ms-toolsai.jupyter",
+    "formulahendry.code-runner",
+    "ms-vscode.vscode-json",
+    "ms-vscode.theme-dark-modern"
+  ]
+} 

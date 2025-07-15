@@ -1,4 +1,4 @@
-from ..core.event_bus import EventBus, GameEvent
+from ..core.event_bus import GameEvent
 from ..core.enums import EventName
 from ..core.payloads import UIMessagePayload, LogRequestPayload
 from ..core.components import DeadComponent, HealthComponent
@@ -9,7 +9,8 @@ class DeadSystem:
         self.world = world
     
     def check_game_end(self):
-        living_entities = [e for e in self.world.entities if not e.has_component(DeadComponent)]
+        living_entities = [e for e in self.world.entities 
+                           if not e.has_component(DeadComponent)]
         if len(living_entities) < 2:
             self.world.is_running = False
             winner = living_entities[0] if living_entities else None

@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "/home/rebornkang/miniconda3/envs/GameEnv/bin/python"
+    },
+    {
+      "name": "Python: Run Game",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run_game.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "/home/rebornkang/miniconda3/envs/GameEnv/bin/python"
+    }
+  ]
+} 

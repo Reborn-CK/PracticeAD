@@ -3,5 +3,114 @@
     "python": "source ~/miniconda3/etc/profile.d/conda.sh && conda activate GameEnv && python"
   },
   "python.defaultInterpreterPath": "/home/rebornkang/miniconda3/envs/GameEnv/bin/python",
-  "code-runner.runInTerminal": true
+  "code-runner.runInTerminal": true,
+  "files.associations": {
+    "*.py": "python"
+  },
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "editor.semanticHighlighting.enabled": true,
+  "python.analysis.autoImportCompletions": true,
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "constant.language.python",
+        "settings": {
+          "foreground": "#569CD6",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "scope": "keyword.control.flow.python",
+        "settings": {
+          "foreground": "#C586C0",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "scope": "keyword.operator.logical.python",
+        "settings": {
+          "foreground": "#D4D4D4"
+        }
+      },
+      {
+        "scope": "keyword.other.python",
+        "settings": {
+          "foreground": "#569CD6",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "scope": "storage.type.python",
+        "settings": {
+          "foreground": "#4EC9B0"
+        }
+      },
+      {
+        "scope": "entity.name.function.python",
+        "settings": {
+          "foreground": "#DCDCAA"
+        }
+      },
+      {
+        "scope": "variable.language.special.self.python",
+        "settings": {
+          "foreground": "#569CD6"
+        }
+      },
+      {
+        "scope": "string.quoted.single.python",
+        "settings": {
+          "foreground": "#CE9178"
+        }
+      },
+      {
+        "scope": "string.quoted.double.python",
+        "settings": {
+          "foreground": "#CE9178"
+        }
+      },
+      {
+        "scope": "comment.line.number-sign.python",
+        "settings": {
+          "foreground": "#6A9955",
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "scope": "constant.numeric.python",
+        "settings": {
+          "foreground": "#B5CEA8"
+        }
+      },
+      {
+        "scope": "variable.parameter.python",
+        "settings": {
+          "foreground": "#9CDCFE"
+        }
+      },
+      {
+        "scope": "entity.name.class.python",
+        "settings": {
+          "foreground": "#4EC9B0",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "scope": "support.type.python",
+        "settings": {
+          "foreground": "#4EC9B0"
+        }
+      }
+    ]
+  },
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.stubPath": "./typings",
+  "editor.fontFamily": "Consolas, 'Courier New', monospace",
+  "editor.fontSize": 14,
+  "editor.lineHeight": 1.5,
+  "editor.renderWhitespace": "boundary",
+  "editor.rulers": [88],
+  "editor.wordWrap": "off"
 }
