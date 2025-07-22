@@ -7,7 +7,7 @@
   "files.associations": {
     "*.py": "python"
   },
-  "python.languageServer": "Pylance",
+  "python.languageServer": "None",
   "python.analysis.typeCheckingMode": "basic",
   "editor.semanticHighlighting.enabled": true,
   "python.analysis.autoImportCompletions": true,

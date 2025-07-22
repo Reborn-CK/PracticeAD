@@ -76,12 +76,14 @@ poison_cloud:
     - version_id: "poison_cloud_01"
       name: "毒云术1"
       description: "基础毒云术，对敌人施加中毒效果。"
+      trigger_on_attack: false
       effects:
         - type: "apply_status_effect"
           status_effect_id: "poison_01"
     - version_id: "poison_cloud_02"
       name: "毒云术2"
       description: "中级毒云术，对敌人施加中毒效果。"
+      trigger_on_attack: false
       effects:
         - type: "apply_status_effect"
           status_effect_id: "poison_02"

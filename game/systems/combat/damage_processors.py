@@ -172,7 +172,9 @@ class AttackTriggerPassiveHandler(BaseProcessor):
         # 如果是被动伤害，不触发攻击被动效果，防止无限循环
         if context.metadata.get("is_passive_damage", False):
             return context
-        
+        # 新增：只有 trigger_on_attack 为 True 时才触发攻击被动
+        if not context.metadata.get("trigger_on_attack", True):
+            return context
         # 检查攻击者是否有攻击触发被动组件
         attack_trigger_passives = context.source.get_components(AttackTriggerPassiveComponent)
         if not attack_trigger_passives:

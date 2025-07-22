@@ -22,6 +22,8 @@ class StatusEffectSystem:
         self.event_bus.subscribe(EventName.AMPLIFY_POISON_REQUEST, self.on_amplify_poison)
         self.event_bus.subscribe(EventName.DETONATE_POISON_REQUEST, self.on_detonate_poison)
         self.event_bus.subscribe(EventName.REDUCE_DEBUFFS_REQUEST, self.on_reduce_debuffs)
+        # 新增：订阅每个角色行动后事件
+        self.event_bus.subscribe(EventName.ACTION_AFTER_ACT, self.on_action_after_act)
     
     def on_apply_effect(self, event: GameEvent):
         payload: ApplyStatusEffectRequestPayload = event.payload
@@ -166,6 +168,24 @@ class StatusEffectSystem:
             self._tick_normal_effects(entity, other_effects, container)
         
         # 状态效果结算完成后，触发UI刷新事件
+        self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
+    
+    def on_action_after_act(self, event: GameEvent):
+        """每个角色行动后，结算其自身的状态效果"""
+        entity = event.payload.acting_entity
+        if entity.has_component(DeadComponent):
+            return
+        container = entity.get_component(StatusEffectContainerComponent)
+        if not container:
+            return
+        # 结算中毒
+        poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
+        if poison_effects:
+            self._tick_poison_effects(entity, poison_effects, container)
+        # 结算其他
+        other_effects = [e for e in container.effects if not e.effect_id.startswith("poison_")]
+        self._tick_normal_effects(entity, other_effects, container)
+        # 派发结算完成事件（可选，便于UI刷新）
         self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
     
     def _tick_poison_effects(self, entity, poison_effects, container):

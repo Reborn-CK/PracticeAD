@@ -39,7 +39,9 @@ class DirectDamageHandler(EffectHandler):
             can_be_reflected=spell_data.get('can_be_reflected', False) if spell_data else False,
             can_crit=spell_data.get('can_crit', False) if spell_data else False,
             crit_chance=crit_chance,
-            crit_damage_multiplier=crit_damage_multiplier
+            crit_damage_multiplier=crit_damage_multiplier,
+            # 新增：传递 trigger_on_attack 字段
+            trigger_on_attack=spell_data.get('trigger_on_attack', True) if spell_data else True
         )
         
         # 派发伤害请求事件，让战斗解析系统处理

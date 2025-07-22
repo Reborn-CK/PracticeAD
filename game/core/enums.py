@@ -29,3 +29,4 @@ class EventName(Enum):
     AMPLIFY_POISON_REQUEST = auto()
     DETONATE_POISON_REQUEST = auto()
     REDUCE_DEBUFFS_REQUEST = auto()
+    ACTION_AFTER_ACT = auto()  # 新增：每个角色行动后结算状态效果

@@ -83,7 +83,9 @@ class DamageOverTimeEffect(EffectLogic):
                 damage_type=effect.context.get("damage_type", "pure"),
                 can_be_reflected=effect.context.get("can_be_reflected", False),
                 is_reflection=effect.context.get("is_reflection", False),
-                is_dot_damage=True  # 标记为持续伤害
+                is_dot_damage=True,  # 标记为持续伤害
+                is_passive_damage=True,  # 新增，防止触发攻击被动
+                trigger_on_attack=False  # 新增，防止触发攻击被动
             )))
 
 class StatModificationLogic(EffectLogic):
@@ -142,7 +144,9 @@ class PoisonDotEffect(EffectLogic):
                 damage_type=effect.context.get("damage_type", "pure"),
                 can_be_reflected=effect.context.get("can_be_reflected", False),
                 is_reflection=effect.context.get("is_reflection", False),
-                is_dot_damage=True  # 标记为持续伤害
+                is_dot_damage=True,  # 标记为持续伤害
+                is_passive_damage=True,  # 新增，防止触发攻击被动
+                trigger_on_attack=False  # 新增，防止触发攻击被动
             )))
 
     def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
@@ -220,7 +224,10 @@ class PoisonEffectLogic(EffectLogic):
                 base_damage=total_damage,
                 damage_type="poison",
                 can_be_reflected=poison_effects[0].context.get("can_be_reflected", False),
-                is_reflection=poison_effects[0].context.get("is_reflection", False)
+                is_reflection=poison_effects[0].context.get("is_reflection", False),
+                is_dot_damage=True,  # 标记为持续伤害
+                is_passive_damage=True,  # 新增，防止触发攻击被动
+                trigger_on_attack=False  # 新增，防止触发攻击被动
             )))
         
         # 中毒层数减1

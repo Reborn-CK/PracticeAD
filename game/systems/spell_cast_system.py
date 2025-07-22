@@ -20,6 +20,7 @@ from .data_manager import DataManager
 from game.status_effects.status_effect_factory import StatusEffectFactory
 from typing import Dict, Any, Optional
 from game.world import World
+from game.core.payloads import ActionRequestPayload
 
 class SpellCastSystem:
     def __init__(self, event_bus: EventBus, data_manager: DataManager, world: World):
@@ -96,6 +97,8 @@ class SpellCastSystem:
             resolution_payload.no_effect_produced = True
             self.event_bus.dispatch(GameEvent(EventName.EFFECT_RESOLUTION_COMPLETE, resolution_payload))
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload('[Spell System]', f'法术{spell_id}没有产生任何效果')))
+        # 新增：法术结算后，派发 ACTION_AFTER_ACT 事件，结算当前角色的状态效果
+        self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionRequestPayload(caster)))
 
     def _apply_single_effect(self, caster: Entity, target: Entity, effect: Dict[str, Any], payload: EffectResolutionPayload):
         """应用单个效果，查询处理器并委托任务"""

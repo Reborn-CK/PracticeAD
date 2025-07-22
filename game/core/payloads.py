@@ -63,6 +63,8 @@ class DamageRequestPayload:
     can_crit: bool = False
     crit_chance: float = 0.0
     crit_damage_multiplier: float = 2.0
+    # 新增：是否触发攻击被动
+    trigger_on_attack: bool = True
 
 @dataclass
 class HealRequestPayload:
