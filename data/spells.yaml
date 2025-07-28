@@ -115,7 +115,13 @@ curse_of_slowness:
           damage_percentage: 0.3  # 伤害百分比：30%防御力
           affected_stat: "defense"  # 受防御力影响
         - type: "apply_status_effect"
-          status_effect_id: "slowness_01"
+          status_effect_id: "speeddown_01"
+    - version_id: "curse_of_slowness_02"
+      name: "迟缓诅咒2"
+      description: "中级迟缓诅咒，降低敌人行动速度。"
+      effects:
+        - type: "apply_status_effect"
+          status_effect_id: "slowdown_01"
 
 # 加速术
 haste:
