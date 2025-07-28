@@ -30,3 +30,11 @@ class EventName(Enum):
     DETONATE_POISON_REQUEST = auto()
     REDUCE_DEBUFFS_REQUEST = auto()
     ACTION_AFTER_ACT = auto()  # 新增：每个角色行动后结算状态效果
+    POST_ACTION_SETTLEMENT = auto()
+
+class BattleTurnRule(Enum):
+    TURN_BASED = auto()
+    AP_BASED = auto()
+
+class CharacterClass(Enum):
+    WARRIOR = auto()

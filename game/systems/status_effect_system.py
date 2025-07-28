@@ -1,12 +1,13 @@
 from ..core.event_bus import EventBus, GameEvent
-from ..core.enums import EventName
+from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import (ApplyStatusEffectRequestPayload, RemoveStatusEffectRequestPayload,
                              UpdateStatusEffectsDurationRequestPayload, DispelRequestPayload,
                              StatQueryPayload, LogRequestPayload, UIMessagePayload, DamageRequestPayload,
                              AmplifyPoisonRequestPayload, DetonatePoisonRequestPayload,
-                             StatusEffectsResolvedPayload, ReduceDebuffsRequestPayload)
+                             StatusEffectsResolvedPayload, ReduceDebuffsRequestPayload, PostActionSettlementPayload)
 from ..core.components import StatusEffectContainerComponent, DeadComponent
 from ..status_effects.status_effect import StatusEffect
+from .turn_manager_system import TurnManagerSystem
 
 class StatusEffectSystem:
     def __init__(self, event_bus: EventBus, world: 'World'): # type: ignore
@@ -22,8 +23,7 @@ class StatusEffectSystem:
         self.event_bus.subscribe(EventName.AMPLIFY_POISON_REQUEST, self.on_amplify_poison)
         self.event_bus.subscribe(EventName.DETONATE_POISON_REQUEST, self.on_detonate_poison)
         self.event_bus.subscribe(EventName.REDUCE_DEBUFFS_REQUEST, self.on_reduce_debuffs)
-        # 新增：订阅每个角色行动后事件
-        self.event_bus.subscribe(EventName.ACTION_AFTER_ACT, self.on_action_after_act)
+        self.event_bus.subscribe(EventName.POST_ACTION_SETTLEMENT, self.on_post_action_settlement)
     
     def on_apply_effect(self, event: GameEvent):
         payload: ApplyStatusEffectRequestPayload = event.payload
@@ -148,6 +148,10 @@ class StatusEffectSystem:
 
     def on_round_start(self, event: GameEvent):
         """回合开始时，处理所有实体的状态效果"""
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        if turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
+            return  # AP模式下，状态效果在角色行动后结算
+
         self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", "---状态效果结算阶段---")))
         
         # 先进行状态效果结算
@@ -170,13 +174,22 @@ class StatusEffectSystem:
         # 状态效果结算完成后，触发UI刷新事件
         self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
     
-    def on_action_after_act(self, event: GameEvent):
+    def on_post_action_settlement(self, event: GameEvent):
         """每个角色行动后，结算其自身的状态效果"""
-        entity = event.payload.acting_entity
+        payload: PostActionSettlementPayload = event.payload
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        if turn_manager.battle_turn_rule == BattleTurnRule.TURN_BASED:
+            # 回合制模式下，这里只做必要结算，不减持续时间
+            # 持续时间在 on_round_start 中处理
+            return
+
+        entity = payload.acting_entity
         if entity.has_component(DeadComponent):
             return
         container = entity.get_component(StatusEffectContainerComponent)
         if not container:
+            # 如果没有状态效果容器，也要确保派发完成事件以刷新UI
+            self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
             return
         # 结算中毒
         poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
@@ -185,7 +198,7 @@ class StatusEffectSystem:
         # 结算其他
         other_effects = [e for e in container.effects if not e.effect_id.startswith("poison_")]
         self._tick_normal_effects(entity, other_effects, container)
-        # 派发结算完成事件（可选，便于UI刷新）
+        # 派发结算完成事件（便于UI刷新）
         self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
     
     def _tick_poison_effects(self, entity, poison_effects, container):

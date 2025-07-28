@@ -34,6 +34,14 @@ class ActionRequestPayload:
     acting_entity: 'Entity'
 
 @dataclass
+class ActionAfterActPayload:
+    acting_entity: 'Entity'
+
+@dataclass
+class PostActionSettlementPayload:
+    acting_entity: 'Entity'
+
+@dataclass
 class CastSpellRequestPayload:
     caster: 'Entity'
     target: 'Entity'

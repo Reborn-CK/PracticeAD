@@ -1,12 +1,15 @@
 # game/systems/player_input_system.py
 from ..core.event_bus import EventBus, GameEvent
-from ..core.enums import EventName
+from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import (ActionRequestPayload, UIDisplayOptionsPayload, 
-                             UIMessagePayload, CastSpellRequestPayload, StatQueryPayload)
+                             UIMessagePayload, CastSpellRequestPayload, StatQueryPayload, ActionAfterActPayload)
 from ..core.components import (PlayerControlledComponent, SpellListComponent, 
                                AIControlledComponent, DeadComponent, HealthComponent, SpeedComponent)
 from .data_manager import DataManager
 from ..core.entity import Entity
+from .ui_system import UISystem
+from .turn_manager_system import TurnManagerSystem
+import time
 
 class PlayerInputSystem:
     def __init__(self, event_bus: EventBus, data_manager: DataManager, world: 'World'): # type: ignore
@@ -20,6 +23,9 @@ class PlayerInputSystem:
     def on_action_request(self, event: GameEvent):
         actor = event.payload.acting_entity
         if actor.has_component(PlayerControlledComponent):
+            turn_manager = self.world.get_system(TurnManagerSystem)
+            if turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
+                self.world.get_system(UISystem).display_status_panel()
             spell_comp = actor.get_component(SpellListComponent)
             options = []
             for sid in spell_comp.spells:
@@ -97,3 +103,4 @@ class PlayerInputSystem:
         target = available_targets[event.payload["choice_index"]]
         
         self.event_bus.dispatch(GameEvent(EventName.CAST_SPELL_REQUEST, CastSpellRequestPayload(caster, target, spell_id)))
+        self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionAfterActPayload(caster)))

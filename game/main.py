@@ -1,5 +1,6 @@
 from .core.event_bus import EventBus
 from .core.entity import Entity
+from .core.enums import BattleTurnRule
 from .world import World
 from .systems.data_manager import DataManager
 from .systems.log_system import LogSystem
@@ -47,7 +48,11 @@ def main():
     world.add_system(InteractionSystem(event_bus, data_manager, status_effect_factory))
 
     # --- 核心循环系统 ---
-    world.add_system(TurnManagerSystem(event_bus, world), priority=50)
+    turn_manager_system = TurnManagerSystem(event_bus, world)
+    world.add_system(turn_manager_system, priority=50)
+    #turn_manager_system.set_battle_turn_rule(BattleTurnRule.AP_BASED)
+    turn_manager_system.set_battle_turn_rule(BattleTurnRule.AP_BASED)
+
 
     world.add_system(PlayerInputSystem(event_bus, data_manager, world), priority=100)
     world.add_system(EnemyAISystem(event_bus, world), priority=100)
@@ -76,6 +81,7 @@ def main():
 
     # 4. 启动游戏世界
     print("开始游戏...")
+    world.get_system(UISystem).display_status_panel()
     world.start()
 
 if __name__ == "__main__":

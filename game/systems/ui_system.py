@@ -1,27 +1,49 @@
+import os
+import time
 from ..core.event_bus import EventBus, GameEvent
-from ..core.enums import EventName
+from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import (RoundStartPayload, UIMessagePayload, UIDisplayOptionsPayload,
                              EffectResolutionPayload, StatQueryPayload)
 from ..core.components import (HealthComponent, ManaComponent, ShieldComponent, SpeedComponent,
                               StatusEffectContainerComponent, DeadComponent)
 from ..core.entity import Entity
+from .turn_manager_system import TurnManagerSystem
 
 class UISystem:
-    """ <<< 职责变更: UI系统 >>>
-    仅负责面向玩家的界面呈现，如状态面板、菜单、关键信息提示。
-    """
+    UI_REFRESH_INTERVAL = 1.0 / 10 # 10 FPS
+
     def __init__(self, event_bus: EventBus, world: 'World'): # type: ignore
         self.event_bus = event_bus
         self.world = world # 需要访问世界实体来渲染状态
+        self.last_refresh_time = 0
         self.event_bus.subscribe(EventName.UI_MESSAGE, lambda e: print(e.payload.message))
         self.event_bus.subscribe(EventName.ROUND_START, self.on_round_start)
         self.event_bus.subscribe(EventName.UI_DISPLAY_OPTIONS, self.on_display_options)
         self.event_bus.subscribe(EventName.EFFECT_RESOLUTION_COMPLETE, self.on_effect_resolution)
         self.event_bus.subscribe(EventName.STATUS_EFFECTS_RESOLVED, self.on_status_effects_resolved)
 
-    def _display_status_panel(self):
+    def update(self):
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        if turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
+            current_time = time.time()
+            if current_time - self.last_refresh_time >= self.UI_REFRESH_INTERVAL:
+                self.display_status_panel()
+
+    def _clear_screen(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+    def _generate_ap_bar(self, current_ap, max_ap, length=20):
+        progress = int((current_ap / max_ap) * length)
+        return f"[{'|' * progress}{'-' * (length - progress)}]"
+
+    def display_status_panel(self):
         """渲染所有角色的详细状态面板。"""
+        self._clear_screen()
         print("-" * 40)
+
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        is_ap_based = turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED
+        
         for entity in self.world.entities:
             if entity.has_component(DeadComponent):
                 status_str = f"[{entity.name}] (已倒下)"
@@ -31,6 +53,12 @@ class UISystem:
                 shield = entity.get_component(ShieldComponent)
                 speed = entity.get_component(SpeedComponent)
                 
+                ap_str = ""
+                if is_ap_based:
+                    ap_value = turn_manager.ap_bars.get(entity.name, 0)
+                    ap_bar = self._generate_ap_bar(ap_value, turn_manager.AP_THRESHOLD)
+                    ap_str = f"AP: {ap_bar} {ap_value:.0f}/{turn_manager.AP_THRESHOLD}"
+
                 hp_str = f"HP: {hp.hp:.0f}/{hp.max_hp:.0f}" if hp else "HP: N/A"
                 mana_str = f"Mana: {mana.mana:.0f}/{mana.max_mana:.0f}" if mana else "Mana: N/A"
                 shield_str = f"Shield: {shield.shield_value:.0f}" if shield else ""
@@ -70,6 +98,7 @@ class UISystem:
 
                 # 构建状态字符串，过滤空值
                 status_parts = [hp_str, mana_str]
+                if ap_str: status_parts.append(ap_str)
                 if shield_str: status_parts.append(shield_str)
                 if speed_str: status_parts.append(speed_str)
                 status_parts.append(status_effects_str)
@@ -77,16 +106,22 @@ class UISystem:
                 status_str = f"[{entity.name}] " + " | ".join(status_parts)
             print(status_str)
         print("-" * 40)
+        self.last_refresh_time = time.time()
     
     def on_round_start(self, event: GameEvent):
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        if turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
+            return # AP模式下不显示回合信息
         payload: RoundStartPayload = event.payload
         print(f"\n{'='*15} 回合 {payload.round_number} {'='*15}")
         # 回合开始时只显示回合信息，不立即显示状态面板
         # 状态面板将在状态效果结算完成后显示
 
     def on_status_effects_resolved(self, event: GameEvent):
-        self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"[UI]**状态效果结算完毕**")))
-        self._display_status_panel()
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        if turn_manager.battle_turn_rule == BattleTurnRule.TURN_BASED:
+            self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"[UI]**状态效果结算完毕**")))
+        self.display_status_panel()
 
     def on_display_options(self, event: GameEvent):
         payload: UIDisplayOptionsPayload = event.payload
