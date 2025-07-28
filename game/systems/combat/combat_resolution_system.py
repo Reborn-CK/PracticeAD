@@ -7,7 +7,7 @@ from ...core.components import HealthComponent, ShieldComponent, StatusEffectCon
 from ...core.pipeline import Pipeline, EffectExecutionContext
 
 # --- 导入新的处理器 ---
-from .damage_processors import CritHandler, ShieldHandler, ResistanceHandler, LifestealHandler, ThornsHandler, AttackTriggerPassiveHandler
+from .damage_processors import AttackDefenseHandler, CritHandler, ShieldHandler, ResistanceHandler, LifestealHandler, ThornsHandler, AttackTriggerPassiveHandler
 from .heal_processors import GrievousWoundsHandler, OverhealToShieldHandler, SkillOverhealToShieldHandler, StatusEffectOverhealToShieldHandler
 
 if TYPE_CHECKING:
@@ -22,8 +22,9 @@ class CombatResolutionSystem:
         self.status_effect_factory = status_effect_factory
 
         # --- 1. 定义伤害处理管线 ---
-        # 伤害计算阶段 (顺序很重要：暴击 -> 护盾 -> 抗性)
+        # 伤害计算阶段 (顺序很重要：攻击力/防御力 -> 暴击 -> 护盾 -> 抗性)
         damage_calculation_processors = [
+            AttackDefenseHandler(self.event_bus),
             CritHandler(self.event_bus),
             ShieldHandler(self.event_bus),
             ResistanceHandler(self.event_bus),

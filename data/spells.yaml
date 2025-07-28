@@ -15,16 +15,18 @@ normal_attack:
       can_be_reflected: true
       effects:
         - type: "damage"
-          amount: 100
           damage_type: "physical"
+          damage_percentage: 0.8  # 伤害百分比：80%攻击力
+          affected_stat: "attack"  # 受攻击力影响
     - version_id: "normal_attack_02"
       name: "普通攻击2"
       description: "中级普通攻击，造成基础伤害。"
       can_be_reflected: true
       effects:
         - type: "damage"
-          amount: 20
           damage_type: "physical"
+          damage_percentage: 1.0  # 伤害百分比：100%攻击力
+          affected_stat: "attack"  # 受攻击力影响
     - version_id: "normal_attack_03"
       name: "普通攻击3,不被反伤"
       description: "高级普通攻击，造成基础伤害。"
@@ -33,6 +35,8 @@ normal_attack:
         - type: "damage"
           amount: 25
           damage_type: "physical"
+          damage_percentage: 1.2  # 伤害百分比：120%攻击力
+          affected_stat: "attack"  # 受攻击力影响
 
 # 火球术
 fireball:
@@ -52,6 +56,8 @@ fireball:
         - type: "damage"
           amount: 15
           damage_type: "fire"
+          damage_percentage: 0.6  # 伤害百分比：60%攻击力
+          affected_stat: "attack"  # 受攻击力影响
         - type: "apply_status_effect"
           status_effect_id: "burning_01"
     - version_id: "fireball_02"
@@ -61,6 +67,8 @@ fireball:
         - type: "damage"
           amount: 20
           damage_type: "fire"
+          damage_percentage: 0.8  # 伤害百分比：80%攻击力
+          affected_stat: "attack"  # 受攻击力影响
         - type: "apply_status_effect"
           status_effect_id: "burning_02"
 
@@ -98,11 +106,16 @@ curse_of_slowness:
   target: "enemy"
   versions:
     - version_id: "curse_of_slowness_01"
-      name: "迟缓诅咒"
-      description: "基础迟缓诅咒，降低敌人速度。"
+      name: "迟缓诅咒1"
+      description: "基础迟缓诅咒，降低敌人行动速度。"
       effects:
+        - type: "damage"
+          amount: 10
+          damage_type: "magic"
+          damage_percentage: 0.3  # 伤害百分比：30%防御力
+          affected_stat: "defense"  # 受防御力影响
         - type: "apply_status_effect"
-          status_effect_id: "speeddown_01"
+          status_effect_id: "slowness_01"
 
 # 加速术
 haste:

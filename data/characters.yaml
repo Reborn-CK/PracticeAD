@@ -13,18 +13,20 @@ hero:
     max_mana: 500
     speed: 60
     shield: 0
+    attack: 50  # 攻击力
+    defense: 30  # 防御力
     crit_chance: 0.1
     crit_damage_multiplier: 2.0
   
   # 被动能力 (引用passives.yaml中的配置)
   passives:
     - "fire_resistance_major"
-    - "grievous_wounds_standard"
-    - "fire_damage_on_attack"
-    - "fire_damage_ratio_on_attack"
-    - "heal_on_attack"
-    - "lifesteal_ratio_on_attack"
-    - "overheal_to_shield_minor"
+    # - "grievous_wounds_standard"
+    # - "fire_damage_on_attack"
+    # - "fire_damage_ratio_on_attack"
+    # - "heal_on_attack"
+    # - "lifesteal_ratio_on_attack"
+    # - "overheal_to_shield_minor"
   
   # 技能列表
   spells:
@@ -64,6 +66,8 @@ boss:
     max_mana: 500
     speed: 50
     shield: 100
+    attack: 80  # 攻击力
+    defense: 50  # 防御力
     crit_chance: 0.0
     crit_damage_multiplier: 2.0
   

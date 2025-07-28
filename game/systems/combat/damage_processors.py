@@ -21,6 +21,45 @@ class BaseProcessor(Processor[EffectExecutionContext]):
 
 # --- 伤害计算阶段的处理器 ---
 
+class AttackDefenseHandler(BaseProcessor):
+    """处理防御力计算（技能伤害百分比计算后的防御力减免）"""
+    def _process(self, context: EffectExecutionContext) -> EffectExecutionContext:
+        # 获取攻击者的攻击力
+        from ...core.components import StatsComponent
+        caster_stats = context.source.get_component(StatsComponent)
+        target_stats = context.target.get_component(StatsComponent)
+        
+        if not caster_stats or not target_stats:
+            return context
+        
+        # 获取攻击力和防御力
+        caster_attack = caster_stats.attack
+        target_defense = target_stats.defense
+        
+        # 计算防御力减免
+        # 防御力减免：遵循 防御力 / (100 + 防御力) 的百分比减免
+        defense_percentage = target_defense / (100 + target_defense)
+        defense_reduction = context.current_value * defense_percentage
+        
+        # 应用防御力减免
+        original_damage = context.current_value
+        context.current_value -= defense_reduction
+        
+        # 确保伤害不为负数
+        context.current_value = max(0, context.current_value)
+        
+        # 记录日志（只有当有实际变化时才记录）
+        if defense_reduction > 0:
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                "[COMBAT]", f"🛡️ {context.target.name} 的防御力({target_defense})提供了 {defense_percentage*100:.1f}% 减伤，减少了 {defense_reduction:.1f} 点伤害"
+            )))
+            
+            self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                "[COMBAT]", f"防御力计算: {original_damage:.1f} - {defense_reduction:.1f} = {context.current_value:.1f}"
+            )))
+        
+        return context
+
 class CritHandler(BaseProcessor):
     """处理暴击"""
     def _process(self, context: EffectExecutionContext) -> EffectExecutionContext:

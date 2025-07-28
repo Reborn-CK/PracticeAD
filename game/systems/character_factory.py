@@ -1,7 +1,7 @@
 from ..core.entity import Entity
 from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent,
                               ShieldComponent, StatusEffectContainerComponent, PlayerControlledComponent,
-                              AIControlledComponent, CritComponent, OverhealToShieldComponent)
+                              AIControlledComponent, CritComponent, OverhealToShieldComponent, StatsComponent)
 from ..core.event_bus import EventBus
 from ..core.enums import EventName
 from ..core.payloads import LogRequestPayload
@@ -34,6 +34,11 @@ class CharacterFactory:
         entity.add_component(StatusEffectContainerComponent())
         entity.add_component(SpellListComponent(spells=character_data['spells']))
         entity.add_component(CritComponent(crit_chance=stats['crit_chance'], crit_damage_multiplier=stats['crit_damage_multiplier']))
+        
+        # 添加StatsComponent
+        attack = stats.get('attack', 0)
+        defense = stats.get('defense', 0)
+        entity.add_component(StatsComponent(attack=attack, defense=defense))
         
         # 根据类型添加控制组件
         if character_data['type'] == 'player':
