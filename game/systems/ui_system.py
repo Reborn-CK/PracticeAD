@@ -5,7 +5,7 @@ from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import (RoundStartPayload, UIMessagePayload, UIDisplayOptionsPayload,
                              EffectResolutionPayload, StatQueryPayload)
 from ..core.components import (HealthComponent, ManaComponent, ShieldComponent, SpeedComponent,
-                              StatusEffectContainerComponent, DeadComponent)
+                              StatusEffectContainerComponent, DeadComponent, StatsComponent)
 from ..core.entity import Entity
 from .turn_manager_system import TurnManagerSystem
 
@@ -52,6 +52,7 @@ class UISystem:
                 mana = entity.get_component(ManaComponent)
                 shield = entity.get_component(ShieldComponent)
                 speed = entity.get_component(SpeedComponent)
+                stats = entity.get_component(StatsComponent)
                 
                 ap_str = ""
                 if is_ap_based:
@@ -62,6 +63,10 @@ class UISystem:
                 hp_str = f"HP: {hp.hp:.0f}/{hp.max_hp:.0f}" if hp else "HP: N/A"
                 mana_str = f"Mana: {mana.mana:.0f}/{mana.max_mana:.0f}" if mana else "Mana: N/A"
                 shield_str = f"Shield: {shield.shield_value:.0f}" if shield else ""
+                
+                # 显示攻击力和防御力
+                attack_str = f"ATK: {stats.attack:.0f}" if stats else "ATK: N/A"
+                defense_str = f"DEF: {stats.defense:.0f}" if stats else "DEF: N/A"
                 
                 # 获取考虑了状态效果后的最终速度值
                 if speed:
@@ -100,6 +105,8 @@ class UISystem:
                 status_parts = [hp_str, mana_str]
                 if ap_str: status_parts.append(ap_str)
                 if shield_str: status_parts.append(shield_str)
+                if attack_str: status_parts.append(attack_str)
+                if defense_str: status_parts.append(defense_str)
                 if speed_str: status_parts.append(speed_str)
                 status_parts.append(status_effects_str)
                 

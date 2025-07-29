@@ -25,6 +25,10 @@ class RoundStartPayload:
     round_number: int
 
 @dataclass
+class TurnStartPayload:
+    entity: 'Entity'
+
+@dataclass
 class LogRequestPayload:
     tag: str
     message: str

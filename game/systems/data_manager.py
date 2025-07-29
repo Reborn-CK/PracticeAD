@@ -7,6 +7,7 @@ class DataManager:
         self.status_effect_data = {}
         self.character_data = {}
         self.passive_data = {}
+        self.equipment_data = {}
 
     def load_spell_data(self, file_path="data/spells.yaml"):
         try:
@@ -37,6 +38,15 @@ class DataManager:
                 self.passive_data = yaml.safe_load(f)
         except Exception as e:
             print(f"[错误] 加载被动能力数据文件{file_path}失败: {e}")
+            raise
+    
+    def load_equipment_data(self, file_path="data/equipment.yaml"):
+        """加载装备数据"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.equipment_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载装备数据文件{file_path}失败: {e}")
             raise
     def get_passive_version_data(self, version_id: str) -> dict | None :
         """根据 version_id获取被动能力版本数据"""
@@ -173,3 +183,20 @@ class DataManager:
                 if version_id:
                     spell_ids.append(version_id)
         return spell_ids
+    
+    def get_equipment_data(self, equipment_id: str) -> dict:
+        """获取装备数据"""
+        # 在所有装备类型中查找
+        for category in ['weapons', 'armor', 'accessories']:
+            if category in self.equipment_data:
+                if equipment_id in self.equipment_data[category]:
+                    return self.equipment_data[category][equipment_id]
+        return None
+    
+    def get_all_equipment_ids(self) -> list:
+        """获取所有装备ID"""
+        equipment_ids = []
+        for category in ['weapons', 'armor', 'accessories']:
+            if category in self.equipment_data:
+                equipment_ids.extend(self.equipment_data[category].keys())
+        return equipment_ids

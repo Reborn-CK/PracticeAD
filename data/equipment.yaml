@@ -1,0 +1,205 @@
+# 装备系统配置文件
+
+# 武器类装备
+weapons:
+  # 铁剑
+  iron_sword:
+    name: "铁剑"
+    description: "一把普通的铁制长剑，锋利耐用。"
+    type: "weapon"
+    slot: "main_hand"
+    rarity: "common"
+    max_durability: 1
+    base_stats:
+      attack: 15
+      defense: 0
+    durability_scaling:
+      # 耐久度百分比 -> 属性倍率
+      100: 1.0    # 100%耐久时，属性100%
+      80: 0.9     # 80%耐久时，属性90%
+      60: 0.8     # 60%耐久时，属性80%
+      40: 0.6     # 40%耐久时，属性60%
+      20: 0.4     # 20%耐久时，属性40%
+      0: 0.2      # 0%耐久时，属性20%
+    durability_loss:
+      on_attack: 1      # 攻击时损耗1点耐久
+      on_block: 2       # 格挡时损耗2点耐久
+      per_turn: 0       # 每回合损耗0点耐久
+
+  # 精钢剑
+  steel_sword:
+    name: "精钢剑"
+    description: "由精钢打造的长剑，比铁剑更加锋利。"
+    type: "weapon"
+    slot: "main_hand"
+    rarity: "uncommon"
+    max_durability: 150
+    base_stats:
+      attack: 25
+      defense: 0
+    durability_scaling:
+      100: 1.0
+      80: 0.95
+      60: 0.85
+      40: 0.7
+      20: 0.5
+      0: 0.3
+    durability_loss:
+      on_attack: 1
+      on_block: 2
+      per_turn: 0
+
+  # 魔法法杖
+  magic_staff:
+    name: "魔法法杖"
+    description: "镶嵌着魔法水晶的法杖，能增强法术威力。"
+    type: "weapon"
+    slot: "main_hand"
+    rarity: "rare"
+    max_durability: 80
+    base_stats:
+      attack: 8
+      defense: 0
+    durability_scaling:
+      100: 1.0
+      80: 0.9
+      60: 0.75
+      40: 0.6
+      20: 0.4
+      0: 0.2
+    durability_loss:
+      on_attack: 2      # 法杖攻击损耗更多耐久
+      on_block: 3
+      per_turn: 0
+
+# 防具类装备
+armor:
+  # 皮甲
+  leather_armor:
+    name: "皮甲"
+    description: "用兽皮制成的轻便护甲。"
+    type: "armor"
+    slot: "chest"
+    rarity: "common"
+    max_durability: 80
+    base_stats:
+      attack: 0
+      defense: 10
+    durability_scaling:
+      100: 1.0
+      80: 0.9
+      60: 0.8
+      40: 0.6
+      20: 0.4
+      0: 0.2
+    durability_loss:
+      on_attack: 0
+      on_block: 1       # 被攻击时损耗耐久
+      per_turn: 0
+
+  # 铁甲
+  iron_armor:
+    name: "铁甲"
+    description: "厚重的铁制护甲，提供强大的防护。"
+    type: "armor"
+    slot: "chest"
+    rarity: "uncommon"
+    max_durability: 120
+    base_stats:
+      attack: 0
+      defense: 20
+    durability_scaling:
+      100: 1.0
+      80: 0.95
+      60: 0.85
+      40: 0.7
+      20: 0.5
+      0: 0.3
+    durability_loss:
+      on_attack: 0
+      on_block: 1
+      per_turn: 0
+
+  # 魔法护甲
+  magic_armor:
+    name: "魔法护甲"
+    description: "由魔法材料制成的护甲，轻便且防护力强。"
+    type: "armor"
+    slot: "chest"
+    rarity: "rare"
+    max_durability: 100
+    base_stats:
+      attack: 0
+      defense: 25
+    durability_scaling:
+      100: 1.0
+      80: 0.9
+      60: 0.75
+      40: 0.6
+      20: 0.4
+      0: 0.2
+    durability_loss:
+      on_attack: 0
+      on_block: 1
+      per_turn: 0
+
+# 饰品类装备
+accessories:
+  # 力量戒指
+  strength_ring:
+    name: "力量戒指"
+    description: "增强佩戴者力量的魔法戒指。"
+    type: "accessory"
+    slot: "ring"
+    rarity: "uncommon"
+    max_durability: 200
+    base_stats:
+      attack: 5
+      defense: 0
+    durability_scaling:
+      100: 1.0
+      80: 0.9
+      60: 0.8
+      40: 0.6
+      20: 0.4
+      0: 0.2
+    durability_loss:
+      on_attack: 0
+      on_block: 0
+      per_turn: 1       # 每回合损耗1点耐久
+
+  # 防御护符
+  defense_amulet:
+    name: "防御护符"
+    description: "提供额外防护的魔法护符。"
+    type: "accessory"
+    slot: "necklace"
+    rarity: "uncommon"
+    max_durability: 150
+    base_stats:
+      attack: 0
+      defense: 8
+    durability_scaling:
+      100: 1.0
+      80: 0.9
+      60: 0.8
+      40: 0.6
+      20: 0.4
+      0: 0.2
+    durability_loss:
+      on_attack: 0
+      on_block: 0
+      per_turn: 1
+
+# 装备槽位定义
+equipment_slots:
+  main_hand: "主手武器"
+  off_hand: "副手武器"
+  chest: "胸甲"
+  head: "头盔"
+  legs: "护腿"
+  feet: "靴子"
+  ring: "戒指"
+  necklace: "项链"
+  belt: "腰带"
+  cloak: "披风" 

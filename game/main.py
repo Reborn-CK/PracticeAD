@@ -16,6 +16,7 @@ from .systems.passive_ability_system import PassiveAbilitySystem
 from .systems.combat.combat_resolution_system import CombatResolutionSystem
 from .systems.dead_system import DeadSystem
 from .systems.character_factory import CharacterFactory
+from .systems.equipment_system import EquipmentSystem
 from .status_effects.status_effect_factory import StatusEffectFactory
 
 def main():
@@ -29,6 +30,7 @@ def main():
     data_manager.load_status_effect_data()
     data_manager.load_passive_data()
     data_manager.load_character_data()
+    data_manager.load_equipment_data()
     world = World(event_bus)
 
     # 2. 创建并注册所有系统
@@ -67,6 +69,10 @@ def main():
     
     # 然后创建战斗系统，并传入被动系统的引用和状态效果工厂
     world.add_system(CombatResolutionSystem(event_bus, data_manager, passive_system, status_effect_factory))
+    
+    # 创建装备系统
+    equipment_system = EquipmentSystem(event_bus, data_manager)
+    world.add_system(equipment_system)
 
     # --- 优先级200，死亡检查 ---
     world.add_system(DeadSystem(event_bus, world), priority=200)

@@ -2,6 +2,7 @@ from enum import Enum, auto
 
 class EventName(Enum):
     ROUND_START = auto()
+    TURN_START = auto()
     LOG_REQUEST = auto()
     UI_MESSAGE = auto()
     UI_DISPLAY_OPTIONS = auto()

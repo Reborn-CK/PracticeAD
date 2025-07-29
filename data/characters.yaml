@@ -28,6 +28,19 @@ hero:
     # - "lifesteal_ratio_on_attack"
     # - "overheal_to_shield_minor"
   
+  # 装备槽
+  equipment_slots:
+    main_hand: "iron_sword"  # 主手武器
+    off_hand: null           # 副手武器
+    chest: null              # 胸甲
+    head: null               # 头盔
+    legs: null               # 护腿
+    feet: null               # 靴子
+    ring: null               # 戒指
+    necklace: null           # 项链
+    belt: null               # 腰带
+    cloak: null              # 披风
+  
   # 技能列表
   spells:
     - "normal_attack_01"
@@ -75,6 +88,19 @@ boss:
   passives:
     - "fire_resistance_minor"
     - "thorns_major"
+  
+  # 装备槽
+  equipment_slots:
+    main_hand: null      # 主手武器
+    off_hand: null       # 副手武器
+    chest: null          # 胸甲
+    head: null           # 头盔
+    legs: null           # 护腿
+    feet: null           # 靴子
+    ring: null           # 戒指
+    necklace: null       # 项链
+    belt: null           # 腰带
+    cloak: null          # 披风
   
   # 技能列表
   spells:
