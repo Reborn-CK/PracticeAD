@@ -56,3 +56,15 @@ class Entity:
         elif ct in self._components:
             return [self._components[ct]]
         return []
+    
+    def remove_component(self, ct: type):
+        """移除指定类型的组件"""
+        # 从单个组件中移除
+        if ct in self._components:
+            del self._components[ct]
+            return True
+        # 从组件列表中移除第一个
+        if ct in self._component_lists and self._component_lists[ct]:
+            self._component_lists[ct].pop(0)
+            return True
+        return False

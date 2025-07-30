@@ -17,6 +17,7 @@ from .systems.combat.combat_resolution_system import CombatResolutionSystem
 from .systems.dead_system import DeadSystem
 from .systems.character_factory import CharacterFactory
 from .systems.equipment_system import EquipmentSystem
+from .systems.item_system import ItemSystem
 from .status_effects.status_effect_factory import StatusEffectFactory
 
 def main():
@@ -31,6 +32,7 @@ def main():
     data_manager.load_passive_data()
     data_manager.load_character_data()
     data_manager.load_equipment_data()
+    data_manager.load_item_data()
     world = World(event_bus)
 
     # 2. 创建并注册所有系统
@@ -62,32 +64,22 @@ def main():
     # --- 纯事件驱动，无update，优先级无所谓 ---
     world.add_system(SpellCastSystem(event_bus, data_manager, status_effect_factory))
     world.add_system(ManaSystem(event_bus))
-    
-    # 先创建被动系统
-    passive_system = PassiveAbilitySystem(event_bus)
-    world.add_system(passive_system)
-    
-    # 然后创建战斗系统，并传入被动系统的引用和状态效果工厂
-    world.add_system(CombatResolutionSystem(event_bus, data_manager, passive_system, status_effect_factory))
-    
-    # 创建装备系统
-    equipment_system = EquipmentSystem(event_bus, data_manager)
-    world.add_system(equipment_system)
+    world.add_system(PassiveAbilitySystem(event_bus))
+    world.add_system(CombatResolutionSystem(event_bus, data_manager, PassiveAbilitySystem(event_bus), status_effect_factory))
+    world.add_system(DeadSystem(event_bus, world))
+    world.add_system(EquipmentSystem(event_bus, data_manager))
+    world.add_system(ItemSystem(event_bus, data_manager, world))
 
-    # --- 优先级200，死亡检查 ---
-    world.add_system(DeadSystem(event_bus, world), priority=200)
-
-    # 3. 创建角色工厂和游戏实体
-    print("创建游戏实体...")
+    # 3. 创建角色
+    print("创建角色...")
     character_factory = CharacterFactory(event_bus, data_manager)
-    
-    # 使用配置文件创建角色
-    player = character_factory.create_character("hero", world)
-    enemy = character_factory.create_character("boss", world)
+    hero = character_factory.create_character("hero", world)
+    boss = character_factory.create_character("boss", world)
 
-    # 4. 启动游戏世界
-    print("开始游戏...")
-    world.get_system(UISystem).display_status_panel()
+    print(f"角色创建完成: {hero.name}, {boss.name}")
+    print("游戏开始!")
+
+    # 4. 开始游戏循环
     world.start()
 
 if __name__ == "__main__":

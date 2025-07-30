@@ -21,6 +21,7 @@ hero:
   # 被动能力 (引用passives.yaml中的配置)
   passives:
     - "fire_resistance_major"
+    - "counter_strike_major"
     # - "grievous_wounds_standard"
     # - "fire_damage_on_attack"
     # - "fire_damage_ratio_on_attack"
@@ -78,7 +79,7 @@ boss:
     mana: 500
     max_mana: 500
     speed: 50
-    shield: 100
+    shield: 0
     attack: 80  # 攻击力
     defense: 50  # 防御力
     crit_chance: 0.0
@@ -88,6 +89,7 @@ boss:
   passives:
     - "fire_resistance_minor"
     - "thorns_major"
+    - "counter_strike_major"
   
   # 装备槽
   equipment_slots:

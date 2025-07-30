@@ -9,7 +9,7 @@ weapons:
     type: "weapon"
     slot: "main_hand"
     rarity: "common"
-    max_durability: 1
+    max_durability: 20
     base_stats:
       attack: 15
       defense: 0
@@ -23,8 +23,9 @@ weapons:
       0: 0.2      # 0%耐久时，属性20%
     durability_loss:
       on_attack: 1      # 攻击时损耗1点耐久
-      on_block: 2       # 格挡时损耗2点耐久
+      on_block: 0       # 格挡时损耗2点耐久
       per_turn: 0       # 每回合损耗0点耐久
+      counter_strike: 10  # 反震时损耗10点耐久
 
   # 精钢剑
   steel_sword:
@@ -48,6 +49,7 @@ weapons:
       on_attack: 1
       on_block: 2
       per_turn: 0
+      counter_strike: 1  # 反震时损耗1点耐久
 
   # 魔法法杖
   magic_staff:
@@ -71,6 +73,7 @@ weapons:
       on_attack: 2      # 法杖攻击损耗更多耐久
       on_block: 3
       per_turn: 0
+      counter_strike: 1  # 反震时损耗1点耐久
 
 # 防具类装备
 armor:
@@ -96,6 +99,7 @@ armor:
       on_attack: 0
       on_block: 1       # 被攻击时损耗耐久
       per_turn: 0
+      counter_strike: 1  # 反震时损耗1点耐久
 
   # 铁甲
   iron_armor:
@@ -119,6 +123,7 @@ armor:
       on_attack: 0
       on_block: 1
       per_turn: 0
+      counter_strike: 1  # 反震时损耗1点耐久
 
   # 魔法护甲
   magic_armor:
@@ -142,6 +147,7 @@ armor:
       on_attack: 0
       on_block: 1
       per_turn: 0
+      counter_strike: 1  # 反震时损耗1点耐久
 
 # 饰品类装备
 accessories:
@@ -167,6 +173,7 @@ accessories:
       on_attack: 0
       on_block: 0
       per_turn: 1       # 每回合损耗1点耐久
+      counter_strike: 1  # 反震时损耗1点耐久
 
   # 防御护符
   defense_amulet:
@@ -190,6 +197,7 @@ accessories:
       on_attack: 0
       on_block: 0
       per_turn: 1
+      counter_strike: 1  # 反震时损耗1点耐久
 
 # 装备槽位定义
 equipment_slots:

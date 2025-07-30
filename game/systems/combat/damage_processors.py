@@ -3,7 +3,8 @@ from ...core.pipeline import Processor, EffectExecutionContext
 from ...core.event_bus import EventBus, GameEvent
 from ...core.enums import EventName
 from ...core.payloads import LogRequestPayload, HealRequestPayload, DamageRequestPayload, ApplyStatusEffectRequestPayload
-from ...core.components import ShieldComponent, ResistanceComponent, ThornsComponent, AttackTriggerPassiveComponent
+from ...core.components import ShieldComponent, ResistanceComponent, ThornsComponent, CounterStrikeComponent, AttackTriggerPassiveComponent, EquipmentComponent
+from ...core.entity import Entity
 
 class BaseProcessor(Processor[EffectExecutionContext]):
     """处理器的基类，方便统一注入EventBus"""
@@ -200,6 +201,67 @@ class ThornsHandler(BaseProcessor):
                     can_crit=False      # 反伤通常不能暴击
                 )))
         return context
+
+class CounterStrikeHandler(BaseProcessor):
+    """处理反震 - 被攻击时造成固定数值的反伤"""
+    def _process(self, context: EffectExecutionContext) -> EffectExecutionContext:
+        # 反震应该在被攻击时触发，即使攻击被护盾完全抵消也应该触发
+        # 所以不检查 context.current_value > 0
+        if context.metadata.get("is_reflection", False):
+            return context
+        if not context.metadata.get("can_be_reflected", True):
+            return context
+        # 被动伤害不被反震
+        if context.metadata.get("is_passive_damage", False):
+            return context
+        
+        if counter_strike_comp := context.target.get_component(CounterStrikeComponent):
+            if counter_strike_comp.counter_damage > 0:
+                # 减少攻击者的武器耐久
+                self._reduce_attacker_weapon_durability(context.source)
+                
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                    "[PASSIVE]", f"⚔️ {context.target.name} 的反震对 {context.source.name} 造成了 {counter_strike_comp.counter_damage:.1f} 点伤害"
+                )))
+                self.event_bus.dispatch(GameEvent(EventName.DAMAGE_REQUEST, DamageRequestPayload(
+                    caster=context.target,
+                    target=context.source,
+                    source_spell_id="counter_strike",
+                    source_spell_name="反震",
+                    base_damage=counter_strike_comp.counter_damage,
+                    original_base_damage=counter_strike_comp.counter_damage,
+                    damage_type="pure",
+                    is_reflection=True, # 标记为反射伤害，防止无限反弹
+                    can_crit=False      # 反震通常不能暴击
+                )))
+        return context
+    
+    def _reduce_attacker_weapon_durability(self, attacker: Entity):
+        """减少攻击者的武器耐久"""
+        if equipment_comp := attacker.get_component(EquipmentComponent):
+            # 检查主手武器
+            main_hand_weapon = equipment_comp.get_equipped_item('main_hand')
+            if main_hand_weapon:
+                # 记录耐久扣减前的值
+                durability_before = main_hand_weapon.current_durability
+                
+                # 减少武器耐久（使用配置中的值，不传amount参数让lose_durability使用配置值）
+                was_destroyed = main_hand_weapon.lose_durability('counter_strike')
+                
+                if was_destroyed:
+                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                        "[PASSIVE]", f"⚔️ {attacker.name} 的主手武器因反震而损坏！"
+                    )))
+                    # 卸下损坏的武器
+                    equipment_comp.unequip_item('main_hand')
+                else:
+                    # 计算实际扣减的耐久值
+                    durability_after = main_hand_weapon.current_durability
+                    durability_lost = durability_before - durability_after
+                    
+                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                        "[PASSIVE]", f"⚔️ {attacker.name} 的主手武器耐久度因反震从 {durability_before} 降低到 {durability_after} (减少{durability_lost}点，剩余{main_hand_weapon.get_durability_percentage():.1f}%)"
+                    )))
 
 class AttackTriggerPassiveHandler(BaseProcessor):
     """处理攻击触发的被动效果"""

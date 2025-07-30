@@ -95,6 +95,11 @@ class EquipmentSystem:
         payload = event.payload
         source = payload.caster
         target = payload.target
+        source_spell_id = payload.source_spell_id
+        
+        # 物品伤害不损耗装备耐久
+        if source_spell_id == "item":
+            return
         
         # 损耗攻击者装备耐久
         if source:

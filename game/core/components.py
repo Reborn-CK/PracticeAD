@@ -64,6 +64,11 @@ class ThornsComponent:
     thorns_percentage: float
 
 @dataclass
+class CounterStrikeComponent:
+    """反震组件 - 被攻击时造成固定数值的反伤"""
+    counter_damage: float = 0.0  # 固定反伤数值
+
+@dataclass
 class CritComponent:
     crit_chance: float = 0.0
     crit_damage_multiplier: float = 2.0
@@ -197,3 +202,64 @@ class EquipmentItem:
     def get_durability_percentage(self) -> float:
         """获取当前耐久度百分比"""
         return (self.current_durability / self.max_durability) * 100
+
+@dataclass
+class InventoryComponent:
+    """物品栏组件，管理角色的物品"""
+    items: Dict[str, 'InventoryItem'] = None  # 物品ID -> 物品实例
+    
+    def __post_init__(self):
+        if self.items is None:
+            self.items = {}
+    
+    def add_item(self, item_id: str, quantity: int = 1) -> bool:
+        """添加物品到物品栏"""
+        if item_id in self.items:
+            # 如果物品已存在且可堆叠，增加数量
+            # 这里需要从DataManager获取物品数据来判断是否可堆叠
+            # 暂时假设所有物品都可堆叠
+            self.items[item_id].quantity += quantity
+            return True
+        else:
+            # 创建新物品实例
+            self.items[item_id] = InventoryItem(item_id, quantity)
+            return True
+    
+    def remove_item(self, item_id: str, quantity: int = 1) -> bool:
+        """从物品栏移除物品"""
+        if item_id not in self.items:
+            return False
+        
+        item = self.items[item_id]
+        if item.quantity <= quantity:
+            # 移除整个物品
+            del self.items[item_id]
+        else:
+            # 减少数量
+            item.quantity -= quantity
+        
+        return True
+    
+    def get_item(self, item_id: str) -> Optional['InventoryItem']:
+        """获取指定物品"""
+        return self.items.get(item_id)
+    
+    def get_all_items(self) -> List['InventoryItem']:
+        """获取所有物品"""
+        return list(self.items.values())
+    
+    def has_item(self, item_id: str, quantity: int = 1) -> bool:
+        """检查是否有指定数量的物品"""
+        if item_id not in self.items:
+            return False
+        return self.items[item_id].quantity >= quantity
+
+@dataclass
+class InventoryItem:
+    """物品栏中的物品实例"""
+    item_id: str
+    quantity: int = 1
+    
+    def __post_init__(self):
+        # 物品数据会在使用时从DataManager获取
+        pass

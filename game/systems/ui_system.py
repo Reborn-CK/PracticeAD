@@ -154,13 +154,24 @@ class UISystem:
         is_thorns_reflection = payload.log_reflection
         is_dot_damage = getattr(payload, 'is_dot_damage', False)
         
-        # 构建基础信息
+        # 构建基础信息 - 添加空值检查
         if is_thorns_reflection:
-            base_info = f"{payload.caster.name} 的反伤对 {payload.target.name}"
+            if payload.caster and payload.target:
+                base_info = f"{payload.caster.name} 的反伤对 {payload.target.name}"
+            else:
+                base_info = "反伤效果"
         elif is_dot_damage:
-            base_info = f"{payload.target.name} 因 {payload.caster.name} 施加的 {payload.source_spell} 战斗战斗持续伤害"
+            if payload.caster and payload.target:
+                base_info = f"{payload.target.name} 因 {payload.caster.name} 施加的 {payload.source_spell} 战斗持续伤害"
+            else:
+                base_info = f"战斗持续伤害"
         else:
-            base_info = f"{payload.caster.name} 对 {payload.target.name} 使用了 {payload.source_spell}"
+            if payload.caster and payload.target:
+                base_info = f"{payload.caster.name} 对 {payload.target.name} 使用了 {payload.source_spell}"
+            elif payload.target:
+                base_info = f"对 {payload.target.name} 使用了 {payload.source_spell}"
+            else:
+                base_info = f"使用了 {payload.source_spell}"
         
         # 获取最终效果
         final_hp_change = next((r for r in payload.resource_changes if r['resource_name'] == 'health'), None)
@@ -185,35 +196,53 @@ class UISystem:
                     old_hp = final_hp_change['current_value'] - final_hp_change['change_amount']
                     new_hp = final_hp_change['current_value']
                     if is_thorns_reflection:
-                        effect_parts.append(f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)")
+                        if payload.target:
+                            effect_parts.append(f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)")
+                        else:
+                            effect_parts.append(f"生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)")
                     else:
-                        damage_info = f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)"
+                        if payload.target:
+                            damage_info = f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)"
+                        else:
+                            damage_info = f"生命值 {old_hp:.0f} → {new_hp:.0f} (减少 {damage_amount:.0f} 点)"
                         if payload.shield_blocked > 0:
-                            effect_parts.append(f"{payload.target.name} 护盾抵消 {payload.shield_blocked:.0f} 点伤害，{damage_info}")
+                            effect_parts.append(f"护盾抵消 {payload.shield_blocked:.0f} 点伤害，{damage_info}")
                         else:
                             effect_parts.append(damage_info)
                 elif final_hp_change['change_amount'] > 0:
                     # 治疗情况
                     old_hp = final_hp_change['current_value'] - final_hp_change['change_amount']
                     new_hp = final_hp_change['current_value']
-                    effect_parts.append(f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (恢复 {final_hp_change['change_amount']:.0f} 点)")
+                    if payload.target:
+                        effect_parts.append(f"{payload.target.name} 生命值 {old_hp:.0f} → {new_hp:.0f} (恢复 {final_hp_change['change_amount']:.0f} 点)")
+                    else:
+                        effect_parts.append(f"生命值 {old_hp:.0f} → {new_hp:.0f} (恢复 {final_hp_change['change_amount']:.0f} 点)")
             
             # 护盾变化
             if payload.shield_changed:
                 if payload.shield_change_amount > 0:
                     old_shield = payload.shield_before
                     new_shield = payload.shield_before + payload.shield_change_amount
-                    effect_parts.append(f"{payload.target.name} 护盾 {old_shield:.0f} → {new_shield:.0f} (增加 {payload.shield_change_amount:.0f} 点)")
+                    if payload.target:
+                        effect_parts.append(f"{payload.target.name} 护盾 {old_shield:.0f} → {new_shield:.0f} (增加 {payload.shield_change_amount:.0f} 点)")
+                    else:
+                        effect_parts.append(f"护盾 {old_shield:.0f} → {new_shield:.0f} (增加 {payload.shield_change_amount:.0f} 点)")
                 elif payload.shield_change_amount < 0:
                     old_shield = payload.shield_before
                     new_shield = payload.shield_before + payload.shield_change_amount
-                    effect_parts.append(f"{payload.target.name} 护盾 {old_shield:.0f} → {new_shield:.0f} (减少 {abs(payload.shield_change_amount):.0f} 点)")
+                    if payload.target:
+                        effect_parts.append(f"{payload.target.name} 护盾 {old_shield:.0f} → {new_shield:.0f} (减少 {abs(payload.shield_change_amount):.0f} 点)")
+                    else:
+                        effect_parts.append(f"护盾 {old_shield:.0f} → {new_shield:.0f} (减少 {abs(payload.shield_change_amount):.0f} 点)")
                 else:
                     # 护盾被消耗但没有具体数值变化记录
-                    effect_parts.append(f"{payload.target.name} 护盾被消耗")
+                    if payload.target:
+                        effect_parts.append(f"{payload.target.name} 护盾被消耗")
+                    else:
+                        effect_parts.append("护盾被消耗")
             
             # 状态效果变化
-            if payload.new_status_effects:
+            if payload.new_status_effects and payload.target:
                 # 获取目标当前的状态效果
                 status_container = payload.target.get_component(StatusEffectContainerComponent)
                 if status_container and status_container.effects:

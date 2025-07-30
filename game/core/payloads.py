@@ -203,3 +203,16 @@ class ReduceDebuffsRequestPayload:
     target: 'Entity'
     reduce_stack_count: int
     reduce_duration_count: int
+
+# 物品系统相关payload
+@dataclass
+class UseItemRequestPayload:
+    user: 'Entity'
+    item_id: str
+    target: Optional['Entity'] = None
+
+@dataclass
+class ManaChangeRequestPayload:
+    target: 'Entity'
+    amount: float
+    change_type: str  # "restore" or "consume"

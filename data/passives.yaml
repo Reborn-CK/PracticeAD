@@ -48,7 +48,7 @@ grievous_wounds:
 # 反伤
 thorns:
   name: "反伤"
-  description: "受到攻击时反弹伤害"
+  description: "受到伤害时反弹伤害"
   effect:
     component: "ThornsComponent"
     attributes:
@@ -65,6 +65,27 @@ thorns:
       description: "反伤效果大。"
       values:
         thorns_percentage: 0.5
+
+# 反震
+counter_strike:
+  name: "反震"
+  description: "受到攻击时造成固定数值的反伤"
+  effect:
+    component: "CounterStrikeComponent"
+    attributes:
+      - name: "counter_damage"
+        type: "float"
+  versions:
+    - version_id: "counter_strike_minor"
+      name: "初级反震"
+      description: "反震效果小。"
+      values:
+        counter_damage: 15.0
+    - version_id: "counter_strike_major"
+      name: "高级反震"
+      description: "反震效果大。"
+      values:
+        counter_damage: 30.0
 
 # 攻击触发被动效果
 attack_trigger_passive:

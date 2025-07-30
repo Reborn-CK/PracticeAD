@@ -1,0 +1,190 @@
+# 物品系统配置文件
+
+# 消耗品类物品
+consumables:
+  # 小型治疗药水
+  minor_healing_potion:
+    name: "小型治疗药水"
+    description: "恢复少量生命值的红色药水"
+    type: "consumable"
+    rarity: "common"
+    effect_type: "heal"
+    effect_value: 30
+    target_type: "self"  # self, ally, enemy, any
+    use_condition: "always"  # always, low_hp, in_combat
+    stackable: true
+    max_stack: 10
+    icon: "🔴"
+  
+  # 中型治疗药水
+  medium_healing_potion:
+    name: "中型治疗药水"
+    description: "恢复中等生命值的红色药水"
+    type: "consumable"
+    rarity: "common"
+    effect_type: "heal"
+    effect_value: 60
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 5
+    icon: "🔴"
+  
+  # 大型治疗药水
+  major_healing_potion:
+    name: "大型治疗药水"
+    description: "恢复大量生命值的红色药水"
+    type: "consumable"
+    rarity: "uncommon"
+    effect_type: "heal"
+    effect_value: 100
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 3
+    icon: "🔴"
+  
+  # 小型法力药水
+  minor_mana_potion:
+    name: "小型法力药水"
+    description: "恢复少量法力值的蓝色药水"
+    type: "consumable"
+    rarity: "common"
+    effect_type: "mana"
+    effect_value: 50
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 10
+    icon: "🔵"
+  
+  # 中型法力药水
+  medium_mana_potion:
+    name: "中型法力药水"
+    description: "恢复中等法力值的蓝色药水"
+    type: "consumable"
+    rarity: "common"
+    effect_type: "mana"
+    effect_value: 100
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 5
+    icon: "🔵"
+  
+  # 大型法力药水
+  major_mana_potion:
+    name: "大型法力药水"
+    description: "恢复大量法力值的蓝色药水"
+    type: "consumable"
+    rarity: "uncommon"
+    effect_type: "mana"
+    effect_value: 200
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 3
+    icon: "🔵"
+  
+  # 解毒药水
+  antidote_potion:
+    name: "解毒药水"
+    description: "解除中毒状态效果的绿色药水"
+    type: "consumable"
+    rarity: "common"
+    effect_type: "cure_status"
+    effect_value: "poison"
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 5
+    icon: "🟢"
+  
+  # 复活药水
+  revival_potion:
+    name: "复活药水"
+    description: "复活已死亡的队友"
+    type: "consumable"
+    rarity: "rare"
+    effect_type: "revive"
+    effect_value: 50  # 复活后的生命值百分比
+    target_type: "ally"
+    use_condition: "always"
+    stackable: true
+    max_stack: 2
+    icon: "⚡"
+
+# 战斗道具
+battle_items:
+  # 炸弹
+  bomb:
+    name: "炸弹"
+    description: "对敌人造成爆炸伤害"
+    type: "battle_item"
+    rarity: "common"
+    effect_type: "damage"
+    effect_value: 40
+    damage_type: "fire"
+    target_type: "enemy"
+    use_condition: "always"
+    stackable: true
+    max_stack: 5
+    icon: "💣"
+  
+  # 烟雾弹
+  smoke_bomb:
+    name: "烟雾弹"
+    description: "降低敌人命中率"
+    type: "battle_item"
+    rarity: "common"
+    effect_type: "status_effect"
+    effect_value: "blind"
+    target_type: "enemy"
+    use_condition: "always"
+    stackable: true
+    max_stack: 3
+    icon: "💨"
+  
+  # 闪光弹
+  flash_bang:
+    name: "闪光弹"
+    description: "使敌人眩晕一回合"
+    type: "battle_item"
+    rarity: "uncommon"
+    effect_type: "status_effect"
+    effect_value: "stun"
+    target_type: "enemy"
+    use_condition: "always"
+    stackable: true
+    max_stack: 3
+    icon: "✨"
+
+# 特殊道具
+special_items:
+  # 传送卷轴
+  teleport_scroll:
+    name: "传送卷轴"
+    description: "立即脱离战斗"
+    type: "special"
+    rarity: "rare"
+    effect_type: "escape"
+    effect_value: 100  # 逃脱成功率
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 1
+    icon: "📜"
+  
+  # 经验药水
+  experience_potion:
+    name: "经验药水"
+    description: "获得额外经验值"
+    type: "special"
+    rarity: "rare"
+    effect_type: "experience"
+    effect_value: 100
+    target_type: "self"
+    use_condition: "always"
+    stackable: true
+    max_stack: 3
+    icon: "⭐"

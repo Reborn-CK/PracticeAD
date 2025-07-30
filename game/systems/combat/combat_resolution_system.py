@@ -7,7 +7,7 @@ from ...core.components import HealthComponent, ShieldComponent, StatusEffectCon
 from ...core.pipeline import Pipeline, EffectExecutionContext
 
 # --- 导入新的处理器 ---
-from .damage_processors import AttackDefenseHandler, CritHandler, ShieldHandler, ResistanceHandler, LifestealHandler, ThornsHandler, AttackTriggerPassiveHandler
+from .damage_processors import AttackDefenseHandler, CritHandler, ShieldHandler, ResistanceHandler, LifestealHandler, ThornsHandler, CounterStrikeHandler, AttackTriggerPassiveHandler
 from .heal_processors import GrievousWoundsHandler, OverhealToShieldHandler, SkillOverhealToShieldHandler, StatusEffectOverhealToShieldHandler
 
 if TYPE_CHECKING:
@@ -29,10 +29,11 @@ class CombatResolutionSystem:
             ShieldHandler(self.event_bus),
             ResistanceHandler(self.event_bus),
         ]
-        # 造成伤害后阶段 (吸血、反伤、攻击触发被动)
+        # 造成伤害后阶段 (吸血、反伤、反震、攻击触发被动)
         post_damage_processors = [
             LifestealHandler(self.event_bus),
             ThornsHandler(self.event_bus),
+            CounterStrikeHandler(self.event_bus),
             AttackTriggerPassiveHandler(self.event_bus, self.status_effect_factory),
         ]
         self.damage_pipeline = Pipeline(processors=damage_calculation_processors)

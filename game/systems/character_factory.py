@@ -2,7 +2,7 @@ from ..core.entity import Entity
 from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent,
                               ShieldComponent, StatusEffectContainerComponent, PlayerControlledComponent,
                               AIControlledComponent, CritComponent, OverhealToShieldComponent, StatsComponent,
-                              EquipmentComponent)
+                              EquipmentComponent, InventoryComponent)
 from ..core.event_bus import EventBus
 from ..core.enums import EventName
 from ..core.payloads import LogRequestPayload
@@ -45,8 +45,14 @@ class CharacterFactory:
         equipment_slots = character_data.get('equipment_slots', {})
         entity.add_component(EquipmentComponent(equipment_slots=equipment_slots))
         
+        # 添加InventoryComponent
+        entity.add_component(InventoryComponent())
+        
         # 装备预设的装备
         self._equip_preset_equipment(entity, equipment_slots, character_id)
+        
+        # 添加预设的物品
+        self._add_preset_items(entity, character_id)
         
         # 更新装备属性
         self._update_equipment_stats(entity, character_id)
@@ -117,6 +123,44 @@ class CharacterFactory:
                 except Exception as e:
                     self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
                         "[EQUIPMENT]", f"❌ {entity.name} 装备 {equipment_id} 失败: {e}"
+                    )))
+    
+    def _add_preset_items(self, entity: Entity, character_id: str):
+        """添加预设的物品"""
+        inventory_comp = entity.get_component(InventoryComponent)
+        if not inventory_comp:
+            return
+        
+        # 根据角色ID添加不同的初始物品
+        if character_id == "hero":
+            # 给勇者一些初始物品
+            initial_items = {
+                "minor_healing_potion": 3,  # 3个小型治疗药水
+                "minor_mana_potion": 2,     # 2个小型法力药水
+                "bomb": 1                   # 1个炸弹
+            }
+            
+            for item_id, quantity in initial_items.items():
+                inventory_comp.add_item(item_id, quantity)
+                item_data = self.data_manager.get_item_data(item_id)
+                if item_data:
+                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                        "[INVENTORY]", f"✅ {entity.name} 获得了 {item_data['name']} x{quantity}"
+                    )))
+        
+        elif character_id == "boss":
+            # 给BOSS一些初始物品
+            initial_items = {
+                "medium_healing_potion": 1,  # 1个中型治疗药水
+                "smoke_bomb": 1              # 1个烟雾弹
+            }
+            
+            for item_id, quantity in initial_items.items():
+                inventory_comp.add_item(item_id, quantity)
+                item_data = self.data_manager.get_item_data(item_id)
+                if item_data:
+                    self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload(
+                        "[INVENTORY]", f"✅ {entity.name} 获得了 {item_data['name']} x{quantity}"
                     )))
     
     def _update_equipment_stats(self, entity: Entity, character_id: str):

@@ -8,6 +8,7 @@ class DataManager:
         self.character_data = {}
         self.passive_data = {}
         self.equipment_data = {}
+        self.item_data = {}
 
     def load_spell_data(self, file_path="data/spells.yaml"):
         try:
@@ -48,6 +49,16 @@ class DataManager:
         except Exception as e:
             print(f"[错误] 加载装备数据文件{file_path}失败: {e}")
             raise
+
+    def load_item_data(self, file_path="data/items.yaml"):
+        """加载物品数据"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.item_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载物品数据文件{file_path}失败: {e}")
+            raise
+
     def get_passive_version_data(self, version_id: str) -> dict | None :
         """根据 version_id获取被动能力版本数据"""
         for passive_id, passive_info in self.passive_data.items():
@@ -200,3 +211,20 @@ class DataManager:
             if category in self.equipment_data:
                 equipment_ids.extend(self.equipment_data[category].keys())
         return equipment_ids
+
+    def get_item_data(self, item_id: str) -> dict:
+        """获取物品数据"""
+        # 在所有物品类型中查找
+        for category in ['consumables', 'battle_items', 'special_items']:
+            if category in self.item_data:
+                if item_id in self.item_data[category]:
+                    return self.item_data[category][item_id]
+        return None
+    
+    def get_all_item_ids(self) -> list:
+        """获取所有物品ID"""
+        item_ids = []
+        for category in ['consumables', 'battle_items', 'special_items']:
+            if category in self.item_data:
+                item_ids.extend(self.item_data[category].keys())
+        return item_ids
