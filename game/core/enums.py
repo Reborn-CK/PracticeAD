@@ -13,6 +13,10 @@ class EventName(Enum):
     CAST_SPELL_REQUEST = auto()
     MANA_COST_REQUEST = auto()
     MANA_CHANGE_REQUEST = auto()
+    ENERGY_COST_REQUEST = auto()
+    ENERGY_CHANGE_REQUEST = auto()
+    ULTIMATE_CHARGE_REQUEST = auto()
+    ULTIMATE_CHARGE_CHANGE_REQUEST = auto()
     DAMAGE_REQUEST = auto()
     DAMAGE_CALCULATION = auto()  # 新增：伤害计算事件
     HEAL_REQUEST = auto()

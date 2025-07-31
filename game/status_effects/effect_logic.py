@@ -248,3 +248,15 @@ class PoisonEffectLogic(EffectLogic):
     
     def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
         pass
+
+class StunEffectLogic(EffectLogic):
+    """击晕效果逻辑"""
+    def on_apply(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+            f"**击晕**: {target.name} 被击晕了，无法行动！"
+        )))
+    
+    def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+            f"**击晕**: {target.name} 从击晕状态中恢复！"
+        )))

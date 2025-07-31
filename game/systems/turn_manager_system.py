@@ -8,9 +8,10 @@ class TurnManagerSystem:
     AP_THRESHOLD = 100
     AP_RECOVERY_RATE = 0.1
 
-    def __init__(self, event_bus: EventBus, world: 'World'): # type: ignore
+    def __init__(self, event_bus: EventBus, world: 'World', energy_system: 'EnergySystem' = None): # type: ignore
         self.event_bus = event_bus
         self.world = world
+        self.energy_system = energy_system
         self.round_number = 0
         self.turn_queue = []
         self.battle_turn_rule = BattleTurnRule.TURN_BASED
@@ -77,6 +78,10 @@ class TurnManagerSystem:
         if self.is_waiting_for_action and self.acting_entity and payload.acting_entity.name == self.acting_entity.name:
             if self.acting_entity.name in self.ap_bars:
                 self.ap_bars[self.acting_entity.name] -= self.AP_THRESHOLD
+            
+            # 恢复能量点
+            if self.energy_system:
+                self.energy_system.restore_energy_at_turn_end(self.acting_entity)
             
             # 派发行动后结算事件
             self.event_bus.dispatch(GameEvent(EventName.POST_ACTION_SETTLEMENT, PostActionSettlementPayload(self.acting_entity)))

@@ -216,3 +216,27 @@ class ManaChangeRequestPayload:
     target: 'Entity'
     amount: float
     change_type: str  # "restore" or "consume"
+
+@dataclass
+class EnergyCostRequestPayload:
+    entity: 'Entity'
+    cost: float
+    is_affordable: bool = True
+
+@dataclass
+class EnergyChangeRequestPayload:
+    target: 'Entity'
+    amount: float
+    change_type: str  # "restore" or "consume"
+
+@dataclass
+class UltimateChargeRequestPayload:
+    entity: 'Entity'
+    cost: float
+    is_affordable: bool = True
+
+@dataclass
+class UltimateChargeChangeRequestPayload:
+    target: 'Entity'
+    amount: float
+    change_type: str  # "add" or "consume"

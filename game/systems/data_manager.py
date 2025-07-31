@@ -72,23 +72,37 @@ class DataManager:
                     return result
         return None
 
+    def _merge_version_data(self, base_data: dict, version_data: dict) -> dict:
+        """智能合并基础数据和版本数据
+        
+        规则：
+        1. 如果版本数据中有某个属性，使用版本数据中的值
+        2. 如果版本数据中没有某个属性，使用基础数据中的值
+        3. 特殊处理嵌套结构（如effects、interactions等）
+        """
+        result = dict(base_data)
+        
+        for key, version_value in version_data.items():
+            if key in ['effects', 'interactions']:
+                # 对于数组类型的属性，直接使用版本数据中的值
+                result[key] = version_value
+            else:
+                # 对于其他属性，如果版本数据中有值就使用，否则保持基础数据的值
+                result[key] = version_value
+        
+        return result
+
     def get_spell_version_data(self, version_id: str) -> dict | None:
         """根据 version_id获取法术版本数据"""
         for spell_id, spell_info in self.spell_data.items():
             for version in spell_info.get('versions', []):
                 if version.get('version_id') == version_id:
-                    # 将基础信息和版本信息合并
-                    result = {
-                        'name': version.get('name', spell_info.get('name', spell_id)),
-                        'description': version.get('description', spell_info.get('description', '')),
-                        'cost': spell_info.get('cost', {}),
-                        'target': spell_info.get('target', 'enemy'),
-                        'can_be_reflected': version.get('can_be_reflected', spell_info.get('can_be_reflected', False)),
-                        # 暴击配置优先级：versions.can_crit > versions.can_be_crit > spell.can_crit > spell.can_be_crit
-                        'can_crit': version.get('can_crit', spell_info.get('can_crit', spell_info.get('can_be_crit', False))),
-                        'effects': version.get('effects', []),
-                        'interactions': version.get('interactions', [])
-                    }
+                    # 使用智能合并方法
+                    result = self._merge_version_data(spell_info, version)
+                    
+                    # 确保版本ID正确
+                    result['version_id'] = version_id
+                    
                     return result
         return None
 
@@ -136,14 +150,65 @@ class DataManager:
         return None
 
     def get_spell_cost(self, spell_id: str) -> float:
-        """获取法术消耗"""
+        """获取法术法力消耗"""
         spell_data = self.get_spell_data(spell_id)
         if not spell_data:
             return 0
         cost_data = spell_data.get('cost', {})
         if isinstance(cost_data, dict):
-            return cost_data.get('amount', 0)
+            # 如果是新格式，检查资源类型
+            resource_type = cost_data.get('resource', 'mana')
+            if resource_type == 'mana':
+                return cost_data.get('amount', 0)
+            elif resource_type == 'null':
+                return 0  # null资源类型不消耗法力
+            else:
+                return 0  # 非法力消耗返回0
         return cost_data  # 兼容旧格式
+
+    def get_spell_energy_cost(self, spell_id: str) -> float:
+        """获取法术能量点消耗"""
+        spell_data = self.get_spell_data(spell_id)
+        if not spell_data:
+            return 0
+        cost_data = spell_data.get('cost', {})
+        if isinstance(cost_data, dict):
+            # 检查资源类型是否为energy
+            resource_type = cost_data.get('resource', 'mana')
+            if resource_type == 'energy':
+                return cost_data.get('amount', 0)
+            else:
+                return 0  # 非能量消耗返回0
+        return 0  # 旧格式不支持能量点消耗
+
+    def get_spell_ultimate_cost(self, spell_id: str) -> float:
+        """获取法术终极技能消耗"""
+        spell_data = self.get_spell_data(spell_id)
+        if not spell_data:
+            return 0
+        cost_data = spell_data.get('cost', {})
+        if isinstance(cost_data, dict):
+            # 检查资源类型是否为ultimate
+            resource_type = cost_data.get('resource', 'mana')
+            if resource_type == 'ultimate':
+                return cost_data.get('amount', 0)
+            else:
+                return 0  # 非终极技能消耗返回0
+        return 0  # 旧格式不支持终极技能消耗
+
+    def get_spell_ultimate_charge(self, spell_id: str) -> float:
+        """获取法术的充能值"""
+        # 首先尝试直接获取基础技能数据
+        if spell_id in self.spell_data:
+            return self.spell_data[spell_id].get('ultimate_charge', 0)
+        
+        # 如果是版本ID，需要从版本数据中获取（版本数据会覆盖基础数据）
+        version_data = self.get_spell_version_data(spell_id)
+        if version_data:
+            # 版本数据中的ultimate_charge会覆盖基础数据
+            return version_data.get('ultimate_charge', 0)
+        
+        return 0
 
     def get_status_effect_data(self, status_effect_id: str):
         """获取状态效果数据 - 保持向后兼容性"""

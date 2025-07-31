@@ -3,7 +3,7 @@ from typing import Optional
 from ..core.entity import Entity
 from ..systems.data_manager import DataManager
 from .status_effect import StatusEffect
-from .effect_logic import DamageOverTimeEffect, StatModificationLogic, OverhealConversionLogic, EffectLogic, PoisonDotEffect, PoisonEffectLogic
+from .effect_logic import DamageOverTimeEffect, StatModificationLogic, OverhealConversionLogic, EffectLogic, PoisonDotEffect, PoisonEffectLogic, StunEffectLogic
 
 # 效果逻辑的映射表，现在集中存放在这里
 EFFECT_LOGIC_MAP = {
@@ -12,6 +12,7 @@ EFFECT_LOGIC_MAP = {
     "poison": PoisonEffectLogic,  # 新增专门的中毒效果逻辑
     "stat_mod": StatModificationLogic,
     "overheal": OverhealConversionLogic,
+    "stun": StunEffectLogic,  # 新增击晕效果逻辑
 }
 
 class StatusEffectFactory:

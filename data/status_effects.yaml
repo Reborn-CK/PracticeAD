@@ -118,3 +118,24 @@ overheal_conversion:
       context:
         conversion_rate: 0.5
 
+# 击晕
+stun:
+  name: "击晕"
+  description: "使目标无法行动的强力控制效果。"
+  category: "control_debuff"
+  logic: "stun"
+  stacking: "refresh_duration"
+  versions:
+    - version_id: "stun_01"
+      name: "击晕1"
+      description: "基础击晕效果，使目标无法行动1回合。"
+      duration: 1
+      context:
+        skip_turn: true
+    - version_id: "stun_02"
+      name: "击晕2"
+      description: "中级击晕效果，使目标无法行动2回合。"
+      duration: 2
+      context:
+        skip_turn: true
+

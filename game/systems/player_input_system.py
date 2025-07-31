@@ -4,9 +4,9 @@ from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import (ActionRequestPayload, UIDisplayOptionsPayload, 
                              UIMessagePayload, CastSpellRequestPayload, StatQueryPayload, ActionAfterActPayload,
                              UseItemRequestPayload)
-from ..core.components import (PlayerControlledComponent, SpellListComponent, 
+from ..core.components import (PlayerControlledComponent, SpellListComponent, UltimateSpellListComponent,
                                AIControlledComponent, DeadComponent, HealthComponent, SpeedComponent,
-                               InventoryComponent)
+                               InventoryComponent, ManaComponent, EnergyComponent, UltimateChargeComponent)
 from .data_manager import DataManager
 from ..core.entity import Entity
 from .ui_system import UISystem
@@ -38,7 +38,7 @@ class PlayerInputSystem:
     
     def _show_main_menu(self, actor: Entity):
         """显示主菜单"""
-        options = ["法术", "物品", "查看状态"]
+        options = ["法术", "终极技能", "物品", "查看状态"]
         self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
             prompt=f"[{actor.name}] 的回合，请选择行动:",
             options=options,
@@ -54,17 +54,83 @@ class PlayerInputSystem:
         for sid in spell_comp.spells:
             spell_data = self.data_manager.get_spell_data(sid)
             spell_name = spell_data.get('name', '未知法术') if spell_data else '未知法术'
-            spell_cost = self.data_manager.get_spell_cost(sid)
-            options.append(f"{spell_name} (MP: {spell_cost})")
+            
+            # 获取法力消耗、能量消耗和终极技能消耗
+            mana_cost = self.data_manager.get_spell_cost(sid)
+            energy_cost = self.data_manager.get_spell_energy_cost(sid)
+            ultimate_cost = self.data_manager.get_spell_ultimate_cost(sid)
+            
+            # 检查资源类型
+            cost_data = spell_data.get('cost', {}) if spell_data else {}
+            resource_type = cost_data.get('resource', 'mana') if isinstance(cost_data, dict) else 'mana'
+            
+            # 构建消耗显示字符串
+            cost_str = ""
+            if resource_type == 'null':
+                cost_str = "(无消耗)"
+            elif resource_type == 'ultimate':
+                # 获取当前充能量
+                ultimate_comp = actor.get_component(UltimateChargeComponent)
+                current_charge = ultimate_comp.charge if ultimate_comp else 0
+                cost_str = f"(充能量: {current_charge:.0f}%)"
+            elif mana_cost > 0 and energy_cost > 0:
+                cost_str = f"(MP: {mana_cost}, Energy: {energy_cost})"
+            elif mana_cost > 0:
+                cost_str = f"(MP: {mana_cost})"
+            elif energy_cost > 0:
+                cost_str = f"(Energy: {energy_cost})"
+            else:
+                cost_str = "(无消耗)"
+            
+            options.append(f"{spell_name} {cost_str}")
         
         # 添加返回选项
         options.append("返回上级菜单")
+        # 添加结束回合选项
+        options.append("结束回合")
         
         self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
             prompt=f"选择法术:",
             options=options,
             response_event_name=EventName.PLAYER_SPELL_CHOICE,
             context={"actor": actor, "menu_type": "spell"}
+        )))
+    
+    def _show_ultimate_spell_menu(self, actor: Entity):
+        """显示终极技能菜单"""
+        options = []
+        
+        # 从角色的终极技能列表中获取技能
+        ultimate_comp = actor.get_component(UltimateSpellListComponent)
+        if not ultimate_comp or not ultimate_comp.ultimate_spells:
+            options.append("没有可用的终极技能")
+        else:
+            for spell_id in ultimate_comp.ultimate_spells:
+                spell_data = self.data_manager.get_spell_data(spell_id)
+                if spell_data:
+                    spell_name = spell_data.get('name', '未知终极技能')
+                    ultimate_cost = self.data_manager.get_spell_ultimate_cost(spell_id)
+                    
+                    # 获取当前充能量
+                    charge_comp = actor.get_component(UltimateChargeComponent)
+                    current_charge = charge_comp.charge if charge_comp else 0
+                    
+                    # 检查是否有足够的充能
+                    if current_charge >= ultimate_cost:
+                        cost_str = f"(消耗: {ultimate_cost}% 充能)"
+                    else:
+                        cost_str = f"(充能不足: 需要{ultimate_cost}%, 当前{current_charge:.0f}%)"
+                    
+                    options.append(f"{spell_name} {cost_str}")
+        
+        # 添加返回选项
+        options.append("返回上级菜单")
+        
+        self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
+            prompt=f"选择终极技能:",
+            options=options,
+            response_event_name=EventName.PLAYER_SPELL_CHOICE,
+            context={"actor": actor, "menu_type": "ultimate", "ultimate_spells": ultimate_comp.ultimate_spells if ultimate_comp else []}
         )))
     
     def _show_item_menu(self, actor: Entity):
@@ -265,9 +331,11 @@ class PlayerInputSystem:
             # 主菜单选择
             if choice_index == 0:  # 法术
                 self._show_spell_menu(actor)
-            elif choice_index == 1:  # 物品
+            elif choice_index == 1:  # 终极技能
+                self._show_ultimate_spell_menu(actor)
+            elif choice_index == 2:  # 物品
                 self._show_item_menu(actor)
-            elif choice_index == 2:  # 查看状态
+            elif choice_index == 3:  # 查看状态
                 self._show_status_menu(actor)
         elif menu_type == "spell":
             # 法术菜单选择
@@ -275,6 +343,19 @@ class PlayerInputSystem:
             if choice_index < len(spell_comp.spells):
                 # 选择了法术
                 spell_id = spell_comp.spells[choice_index]
+                self._handle_spell_selection(actor, spell_id)
+            elif choice_index == len(spell_comp.spells):
+                # 选择了返回
+                self._show_main_menu(actor)
+            elif choice_index == len(spell_comp.spells) + 1:
+                # 选择了结束回合
+                self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionAfterActPayload(actor)))
+        elif menu_type == "ultimate":
+            # 终极技能菜单选择
+            ultimate_spells = context.get("ultimate_spells", [])
+            if choice_index < len(ultimate_spells):
+                # 选择了终极技能
+                spell_id = ultimate_spells[choice_index]
                 self._handle_spell_selection(actor, spell_id)
             else:
                 # 选择了返回
@@ -287,6 +368,50 @@ class PlayerInputSystem:
         """处理法术选择"""
         spell_data = self.data_manager.get_spell_data(spell_id)
         target_type = self.data_manager.get_spell_target_type(spell_id)
+        
+        # 在目标选择前检查技能消耗
+        mana_cost = self.data_manager.get_spell_cost(spell_id)
+        energy_cost = self.data_manager.get_spell_energy_cost(spell_id)
+        ultimate_cost = self.data_manager.get_spell_ultimate_cost(spell_id)
+        
+        # 检查是否是终极技能
+        is_ultimate = False
+        ultimate_comp = actor.get_component(UltimateSpellListComponent)
+        if ultimate_comp and spell_id in ultimate_comp.ultimate_spells:
+            is_ultimate = True
+        
+        # 检查法力消耗
+        if mana_cost > 0:
+            mana_comp = actor.get_component(ManaComponent)
+            if not mana_comp or mana_comp.mana < mana_cost:
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**提示**: [{actor.name}] 法力不足！需要 {mana_cost} 点法力值")))
+                if is_ultimate:
+                    self._show_ultimate_spell_menu(actor)
+                else:
+                    self._show_spell_menu(actor)
+                return
+        
+        # 检查能量消耗
+        if energy_cost > 0:
+            energy_comp = actor.get_component(EnergyComponent)
+            if not energy_comp or energy_comp.energy < energy_cost:
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**提示**: [{actor.name}] 能量不足！需要 {energy_cost} 点能量值")))
+                if is_ultimate:
+                    self._show_ultimate_spell_menu(actor)
+                else:
+                    self._show_spell_menu(actor)
+                return
+        
+        # 检查终极技能消耗
+        if ultimate_cost > 0:
+            ultimate_comp = actor.get_component(UltimateChargeComponent)
+            if not ultimate_comp or ultimate_comp.charge < ultimate_cost:
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**提示**: [{actor.name}] 充能未就绪！需要 {ultimate_cost}% 充能值，当前 {ultimate_comp.charge:.0f}%")))
+                if is_ultimate:
+                    self._show_ultimate_spell_menu(actor)
+                else:
+                    self._show_spell_menu(actor)
+                return
         
         # 根据法术目标类型确定可选目标
         available_targets = []
@@ -312,11 +437,17 @@ class PlayerInputSystem:
         
         if not available_targets:
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload("**提示**: 没有可用的目标!")))
-            self._show_spell_menu(actor)
+            if is_ultimate:
+                self._show_ultimate_spell_menu(actor)
+            else:
+                self._show_spell_menu(actor)
             return
         
         # 添加返回选项
-        target_descriptions.append("返回法术菜单")
+        if is_ultimate:
+            target_descriptions.append("返回终极技能菜单")
+        else:
+            target_descriptions.append("返回法术菜单")
         
         # 显示目标选择
         spell_name = spell_data.get('name', '未知法术') if spell_data else '未知法术'
@@ -324,7 +455,7 @@ class PlayerInputSystem:
             prompt=f"选择 {spell_name} 的目标:",
             options=target_descriptions,
             response_event_name=EventName.PLAYER_TARGET_CHOICE,
-            context={"caster": actor, "spell_id": spell_id, "available_targets": available_targets}
+            context={"caster": actor, "spell_id": spell_id, "available_targets": available_targets, "is_ultimate": is_ultimate}
         )))
     
     def on_player_target_choice(self, event: GameEvent):
@@ -332,16 +463,21 @@ class PlayerInputSystem:
         caster = context["caster"]
         spell_id = context["spell_id"]
         available_targets = context["available_targets"]
+        is_ultimate = context.get("is_ultimate", False)
         choice_index = event.payload["choice_index"]
         
         if choice_index < len(available_targets):
             # 选择了目标
             target = available_targets[choice_index]
+            # 只派发施法请求，不立即结束回合
+            # 施法系统会在施法成功后派发ACTION_AFTER_ACT事件
             self.event_bus.dispatch(GameEvent(EventName.CAST_SPELL_REQUEST, CastSpellRequestPayload(caster, target, spell_id)))
-            self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionAfterActPayload(caster)))
         else:
             # 选择了返回
-            self._show_spell_menu(caster)
+            if is_ultimate:
+                self._show_ultimate_spell_menu(caster)
+            else:
+                self._show_spell_menu(caster)
     
     def on_player_item_choice(self, event: GameEvent):
         context = event.payload["context"]

@@ -12,6 +12,8 @@ from .systems.player_input_system import PlayerInputSystem
 from .systems.enemy_ai_system import EnemyAISystem
 from .systems.spell_cast_system import SpellCastSystem
 from .systems.mana_system import ManaSystem
+from .systems.energy_system import EnergySystem
+from .systems.ultimate_charge_system import UltimateChargeSystem
 from .systems.passive_ability_system import PassiveAbilitySystem
 from .systems.combat.combat_resolution_system import CombatResolutionSystem
 from .systems.dead_system import DeadSystem
@@ -52,7 +54,8 @@ def main():
     world.add_system(InteractionSystem(event_bus, data_manager, status_effect_factory))
 
     # --- 核心循环系统 ---
-    turn_manager_system = TurnManagerSystem(event_bus, world)
+    energy_system = EnergySystem(event_bus)
+    turn_manager_system = TurnManagerSystem(event_bus, world, energy_system)
     world.add_system(turn_manager_system, priority=50)
     #turn_manager_system.set_battle_turn_rule(BattleTurnRule.AP_BASED)
     turn_manager_system.set_battle_turn_rule(BattleTurnRule.AP_BASED)
@@ -62,8 +65,11 @@ def main():
     world.add_system(EnemyAISystem(event_bus, world), priority=100)
     
     # --- 纯事件驱动，无update，优先级无所谓 ---
-    world.add_system(SpellCastSystem(event_bus, data_manager, status_effect_factory))
+    ultimate_charge_system = UltimateChargeSystem(event_bus)
+    world.add_system(SpellCastSystem(event_bus, data_manager, world, ultimate_charge_system))
     world.add_system(ManaSystem(event_bus))
+    world.add_system(energy_system)  # 使用之前创建的energy_system实例
+    world.add_system(ultimate_charge_system)
     world.add_system(PassiveAbilitySystem(event_bus))
     world.add_system(CombatResolutionSystem(event_bus, data_manager, PassiveAbilitySystem(event_bus), status_effect_factory))
     world.add_system(DeadSystem(event_bus, world))

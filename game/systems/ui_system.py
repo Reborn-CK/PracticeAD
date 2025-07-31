@@ -5,7 +5,7 @@ from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import (RoundStartPayload, UIMessagePayload, UIDisplayOptionsPayload,
                              EffectResolutionPayload, StatQueryPayload)
 from ..core.components import (HealthComponent, ManaComponent, ShieldComponent, SpeedComponent,
-                              StatusEffectContainerComponent, DeadComponent, StatsComponent)
+                              StatusEffectContainerComponent, DeadComponent, StatsComponent, EnergyComponent, UltimateChargeComponent)
 from ..core.entity import Entity
 from .turn_manager_system import TurnManagerSystem
 
@@ -50,6 +50,8 @@ class UISystem:
             else:
                 hp = entity.get_component(HealthComponent)
                 mana = entity.get_component(ManaComponent)
+                energy = entity.get_component(EnergyComponent)
+                ultimate_charge = entity.get_component(UltimateChargeComponent)
                 shield = entity.get_component(ShieldComponent)
                 speed = entity.get_component(SpeedComponent)
                 stats = entity.get_component(StatsComponent)
@@ -62,6 +64,8 @@ class UISystem:
 
                 hp_str = f"HP: {hp.hp:.0f}/{hp.max_hp:.0f}" if hp else "HP: N/A"
                 mana_str = f"Mana: {mana.mana:.0f}/{mana.max_mana:.0f}" if mana else "Mana: N/A"
+                energy_str = f"Energy: {energy.energy:.0f}/{energy.max_energy:.0f}" if energy else "Energy: N/A"
+                ultimate_str = f"Ultimate: {ultimate_charge.charge:.0f}%" if ultimate_charge else "Ultimate: N/A"
                 shield_str = f"Shield: {shield.shield_value:.0f}" if shield else ""
                 
                 # 显示攻击力和防御力
@@ -102,8 +106,9 @@ class UISystem:
                     status_effects_str = f" | 状态: " + ", ".join(effects_list)
 
                 # 构建状态字符串，过滤空值
-                status_parts = [hp_str, mana_str]
+                status_parts = [hp_str, mana_str, energy_str]
                 if ap_str: status_parts.append(ap_str)
+                if ultimate_str: status_parts.append(ultimate_str)
                 if shield_str: status_parts.append(shield_str)
                 if attack_str: status_parts.append(attack_str)
                 if defense_str: status_parts.append(defense_str)

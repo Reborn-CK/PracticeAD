@@ -12,21 +12,24 @@ from .effect_handlers.reduce_debuffs_handler import ReduceDebuffsHandler
 from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName
 from ..core.payloads import (CastSpellRequestPayload, EffectResolutionPayload, DispelRequestPayload, 
-                             UIMessagePayload, LogRequestPayload, ManaCostRequestPayload)
+                             UIMessagePayload, LogRequestPayload, ManaCostRequestPayload, EnergyCostRequestPayload, UltimateChargeRequestPayload)
 from ..core.components import (ManaComponent, DeadComponent, HealthComponent, ShieldComponent,
-                               StatusEffectContainerComponent, SpellListComponent)
+                               StatusEffectContainerComponent, SpellListComponent, EnergyComponent, UltimateChargeComponent)
 from ..core.entity import Entity
 from .data_manager import DataManager
 from game.status_effects.status_effect_factory import StatusEffectFactory
 from typing import Dict, Any, Optional
 from game.world import World
 from game.core.payloads import ActionRequestPayload
+from game.core.payloads import ActionAfterActPayload
+from game.systems.ultimate_charge_system import UltimateChargeSystem
 
 class SpellCastSystem:
-    def __init__(self, event_bus: EventBus, data_manager: DataManager, world: World):
+    def __init__(self, event_bus: EventBus, data_manager: DataManager, world: World, ultimate_charge_system: 'UltimateChargeSystem' = None):
         self.event_bus = event_bus
         self.data_manager = data_manager
         self.world = world
+        self.ultimate_charge_system = ultimate_charge_system
         self.status_effect_factory = StatusEffectFactory(data_manager)
         
         # 注册事件监听
@@ -73,7 +76,32 @@ class SpellCastSystem:
         if not mana_request.is_affordable:
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[SPELL]", "施法失败: 法力不足")))
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**提示**: [{caster.name}] 法力不足!")))
+            # 施法失败，不派发ACTION_AFTER_ACT事件，让玩家重新选择
             return
+
+        # 检查能量点消耗
+        energy_cost = self.data_manager.get_spell_energy_cost(spell_id)
+        if energy_cost > 0:
+            energy_request = EnergyCostRequestPayload(entity=caster, cost=energy_cost)
+            self.event_bus.dispatch(GameEvent(EventName.ENERGY_COST_REQUEST, energy_request))
+            
+            if not energy_request.is_affordable:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[SPELL]", "施法失败: 能量不足")))
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**提示**: [{caster.name}] 能量不足!")))
+                # 施法失败，不派发ACTION_AFTER_ACT事件，让玩家重新选择
+                return
+
+        # 检查终极技能消耗
+        ultimate_cost = self.data_manager.get_spell_ultimate_cost(spell_id)
+        if ultimate_cost > 0:
+            ultimate_request = UltimateChargeRequestPayload(entity=caster, cost=ultimate_cost)
+            self.event_bus.dispatch(GameEvent(EventName.ULTIMATE_CHARGE_REQUEST, ultimate_request))
+            
+            if not ultimate_request.is_affordable:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[SPELL]", "施法失败: 充能不足")))
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**提示**: [{caster.name}] 充能不足!")))
+                # 施法失败，不派发ACTION_AFTER_ACT事件，让玩家重新选择
+                return
 
         # 应用法术效果
         self.apply_spell(caster, target, spell_id)
@@ -97,8 +125,12 @@ class SpellCastSystem:
             resolution_payload.no_effect_produced = True
             self.event_bus.dispatch(GameEvent(EventName.EFFECT_RESOLUTION_COMPLETE, resolution_payload))
             self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload('[Spell System]', f'法术{spell_id}没有产生任何效果')))
-        # 新增：法术结算后，派发 ACTION_AFTER_ACT 事件，结算当前角色的状态效果
-        self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionRequestPayload(caster)))
+        # 新增：从施法中获取终极技能充能值
+        if self.ultimate_charge_system:
+            self.ultimate_charge_system.add_charge_from_spell(caster, spell_id, self.data_manager)
+        
+        # 新增：施法成功后，派发 ACTION_AFTER_ACT 事件，结算当前角色的状态效果并结束回合
+        self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionAfterActPayload(caster)))
 
     def _apply_single_effect(self, caster: Entity, target: Entity, effect: Dict[str, Any], payload: EffectResolutionPayload):
         """应用单个效果，查询处理器并委托任务"""

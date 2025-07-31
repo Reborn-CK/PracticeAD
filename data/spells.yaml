@@ -3,8 +3,9 @@ normal_attack:
   name: "普通攻击"
   description: "对敌人造成基础伤害。"
   cost:
-    resource: "mana"
+    resource: "null"
     amount: 0
+  ultimate_charge: 5  # 每次施法获得5%充能值
   target: "enemy"
   can_be_reflected: true
   can_be_crit: true
@@ -12,7 +13,8 @@ normal_attack:
     - version_id: "normal_attack_01"
       name: "普通攻击1"
       description: "基础普通攻击，造成基础伤害。"
-      can_be_reflected: true
+      can_be_reflected: false
+      ultimate_charge: 100
       effects:
         - type: "damage"
           damage_type: "physical"
@@ -45,6 +47,7 @@ fireball:
   cost:
     resource: "mana"
     amount: 10
+  ultimate_charge: 15  # 每次施法获得15%充能值
   target: "enemy"
   can_be_reflected: true
   can_crit: true
@@ -373,3 +376,172 @@ poison_detonate:
       effects:
         - type: "detonate_poison"
           damage_multiplier: 2.0
+
+# 能量技能 - 使用能量点而非法力值
+
+# 能量冲击
+energy_blast:
+  name: "能量冲击"
+  description: "消耗能量点释放强大的能量冲击。"
+  cost:
+    resource: "energy"
+    amount: 1
+  ultimate_charge: 20  # 每次施法获得20%充能值
+  target: "enemy"
+  can_be_reflected: true
+  can_crit: true
+  versions:
+    - version_id: "energy_blast_01"
+      name: "能量冲击1"
+      description: "基础能量冲击，造成纯能量伤害。"
+      effects:
+        - type: "damage"
+          amount: 30
+          damage_type: "pure"
+          damage_percentage: 1.0  # 伤害百分比：100%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+    - version_id: "energy_blast_02"
+      name: "能量冲击2"
+      description: "中级能量冲击，造成更高的纯能量伤害。"
+      ultimate_charge: 200  # 每次施法获得200%充能值
+      effects:
+        - type: "damage"
+          amount: 45
+          damage_type: "pure"
+          damage_percentage: 1.5  # 伤害百分比：150%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+
+# 能量护盾
+energy_shield:
+  name: "能量护盾"
+  description: "消耗能量点为自己或队友提供护盾。"
+  cost:
+    resource: "energy"
+    amount: 1
+  ultimate_charge: 15  # 每次施法获得15%充能值
+  target: "ally"
+  versions:
+    - version_id: "energy_shield_01"
+      name: "能量护盾1"
+      description: "基础能量护盾，提供中等护盾值。"
+      effects:
+        - type: "add_shield"
+          amount: 25
+          shield_percentage: 0.5  # 护盾百分比：50%防御力
+          affected_stat: "defense"  # 受防御力影响
+    - version_id: "energy_shield_02"
+      name: "能量护盾2"
+      description: "中级能量护盾，提供更高的护盾值。"
+      effects:
+        - type: "add_shield"
+          amount: 40
+          shield_percentage: 0.8  # 护盾百分比：80%防御力
+          affected_stat: "defense"  # 受防御力影响
+
+# 能量爆发
+energy_burst:
+  name: "能量爆发"
+  description: "消耗大量能量点释放强大的爆发技能。"
+  cost:
+    resource: "energy"
+    amount: 2
+  ultimate_charge: 25  # 每次施法获得25%充能值
+  target: "enemy"
+  can_be_reflected: true
+  can_crit: true
+  versions:
+    - version_id: "energy_burst_01"
+      name: "能量爆发1"
+      description: "基础能量爆发，造成大量伤害并可能击晕敌人。"
+      effects:
+        - type: "damage"
+          amount: 60
+          damage_type: "pure"
+          damage_percentage: 2.0  # 伤害百分比：200%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+        - type: "apply_status_effect"
+          status_effect_id: "stun_01"
+    - version_id: "energy_burst_02"
+      name: "能量爆发2"
+      description: "中级能量爆发，造成更高伤害并必定击晕敌人。"
+      effects:
+        - type: "damage"
+          amount: 80
+          damage_type: "pure"
+          damage_percentage: 2.5  # 伤害百分比：250%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+        - type: "apply_status_effect"
+          status_effect_id: "stun_02"
+
+# 能量恢复
+energy_restore:
+  name: "能量恢复"
+  description: "消耗能量点恢复生命值。"
+  cost:
+    resource: "energy"
+    amount: 1
+  ultimate_charge: 10  # 每次施法获得10%充能值
+  target: "ally"
+  versions:
+    - version_id: "energy_restore_01"
+      name: "能量恢复1"
+      description: "基础能量恢复，恢复中等生命值。"
+      effects:
+        - type: "heal"
+          amount: 35
+          heal_percentage: 0.7  # 治疗百分比：70%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+    - version_id: "energy_restore_02"
+      name: "能量恢复2"
+      description: "中级能量恢复，恢复更多生命值。"
+      effects:
+        - type: "heal"
+          amount: 50
+          heal_percentage: 1.0  # 治疗百分比：100%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+
+# 终极技能 - 消耗充能值释放的强大技能
+
+# 终极技能
+ultimate:
+  name: "终极技能"
+  description: "消耗充能值释放的强大终极技能。"
+  cost:
+    resource: "ultimate"
+    amount: 100
+  ultimate_charge: 0  # 基础技能不提供充能值
+  target: "enemy"
+  can_be_reflected: true
+  can_crit: true
+  versions:
+    - version_id: "ultimate_01"
+      name: "终极技能1"
+      description: "基础终极技能，造成巨大伤害。"
+      cost:
+        resource: "ultimate"
+        amount: 100
+      ultimate_charge: 0  # 版本1不提供充能值
+      target: "enemy"  # 覆盖目标类型
+      effects:
+        - type: "damage"
+          amount: 100
+          damage_type: "pure"
+          damage_percentage: 3.0  # 伤害百分比：300%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+    - version_id: "ultimate_02"
+      name: "终极技能2"
+      description: "升级版终极技能，造成毁灭性伤害。"
+      cost:
+        resource: "ultimate"
+        amount: 200
+      ultimate_charge: 0  # 版本2不提供充能值
+      target: "ally"  # 覆盖目标类型为盟友
+      can_be_reflected: false  # 覆盖反射设置
+      effects:
+        - type: "damage"
+          amount: 200
+          damage_type: "pure"
+          damage_percentage: 5.0  # 伤害百分比：500%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+        - type: "apply_status_effect"
+          status_effect_id: "stun_01"

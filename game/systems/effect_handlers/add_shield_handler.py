@@ -2,7 +2,9 @@ from typing import Dict, Any
 from .base_handler import EffectHandler
 from ...core.entity import Entity
 from ...core.components import ShieldComponent, DeadComponent
-from ...core.payloads import EffectResolutionPayload
+from ...core.payloads import EffectResolutionPayload, GainShieldPayload
+from ...core.event_bus import GameEvent
+from ...core.enums import EventName
 
 class AddShieldHandler(EffectHandler):
     """处理添加护盾效果"""
@@ -11,18 +13,27 @@ class AddShieldHandler(EffectHandler):
         if target.has_component(DeadComponent):
             return
 
-        shield_comp = target.get_component(ShieldComponent)
-        if not shield_comp:
-            shield_comp = target.add_component(ShieldComponent(0))
-
         # 获取护盾数值
-        shield_amount = effect.get('shield_amount', effect.get('params', {}).get('shield_amount', 0))
+        shield_amount = effect.get('amount', 0)
         
-        shield_before = shield_comp.shield_value
-        shield_comp.add_shield(shield_amount)
+        # 获取当前护盾值用于记录
+        shield_comp = target.get_component(ShieldComponent)
+        shield_before = shield_comp.shield_value if shield_comp else 0
         
-        # 记录护盾变化
+        # 使用事件系统来添加护盾，而不是直接操作组件
+        shield_request = GainShieldPayload(
+            target=target,
+            source=f"{caster.name}的护盾法术",
+            amount=shield_amount
+        )
+        self.event_bus.dispatch(GameEvent(EventName.GAIN_SHIELD_REQUEST, shield_request))
+        
+        # 记录护盾变化（CombatResolutionSystem会处理实际的护盾添加）
         payload.shield_changed = True
         payload.shield_before = shield_before
         payload.shield_change_amount = shield_amount
-        payload.add_resource_change('shield', shield_amount, shield_comp.shield_value)
+        
+        # 获取更新后的护盾值
+        updated_shield_comp = target.get_component(ShieldComponent)
+        current_shield = updated_shield_comp.shield_value if updated_shield_comp else 0
+        payload.add_resource_change('shield', shield_amount, current_shield)

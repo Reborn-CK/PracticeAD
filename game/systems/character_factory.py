@@ -1,8 +1,8 @@
 from ..core.entity import Entity
-from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent,
+from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent, UltimateSpellListComponent,
                               ShieldComponent, StatusEffectContainerComponent, PlayerControlledComponent,
                               AIControlledComponent, CritComponent, OverhealToShieldComponent, StatsComponent,
-                              EquipmentComponent, InventoryComponent)
+                              EquipmentComponent, InventoryComponent, EnergyComponent, UltimateChargeComponent)
 from ..core.event_bus import EventBus
 from ..core.enums import EventName
 from ..core.payloads import LogRequestPayload
@@ -30,10 +30,16 @@ class CharacterFactory:
         stats = character_data['stats']
         entity.add_component(HealthComponent(entity, self.event_bus, stats['hp'], stats['max_hp']))
         entity.add_component(ManaComponent(mana=stats['mana'], max_mana=stats['max_mana']))
+        entity.add_component(EnergyComponent(energy=stats.get('energy', 0), max_energy=stats.get('max_energy', 3), recovery_per_turn=stats.get('energy_recovery', 1.0)))
+        entity.add_component(UltimateChargeComponent(charge=stats.get('ultimate_charge', 0), max_charge=stats.get('max_ultimate_charge', 200), charge_per_spell=stats.get('charge_per_spell', 10)))
         entity.add_component(SpeedComponent(speed=stats['speed']))
         entity.add_component(ShieldComponent(shield_value=stats['shield']))
         entity.add_component(StatusEffectContainerComponent())
         entity.add_component(SpellListComponent(spells=character_data['spells']))
+        
+        # 添加终极技能列表组件
+        ultimate_spells = character_data.get('ultimate_spells', [])
+        entity.add_component(UltimateSpellListComponent(ultimate_spells=ultimate_spells))
         entity.add_component(CritComponent(crit_chance=stats['crit_chance'], crit_damage_multiplier=stats['crit_damage_multiplier']))
         
         # 添加StatsComponent - 使用角色数据中的基础属性

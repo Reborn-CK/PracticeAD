@@ -35,12 +35,30 @@ class ManaComponent:
     max_mana: float
 
 @dataclass
+class EnergyComponent:
+    """能量点组件 - 管理角色的能量点"""
+    energy: float
+    max_energy: float
+    recovery_per_turn: float = 1.0  # 每回合恢复的能量点数，可通过装备等修改
+
+@dataclass
+class UltimateChargeComponent:
+    """终极技能充能条组件 - 管理角色的终极技能充能"""
+    charge: float = 0.0  # 当前充能值（0-200%）
+    max_charge: float = 200.0  # 最大充能值
+    charge_per_spell: float = 10.0  # 每次施法获得的充能值
+
+@dataclass
 class SpeedComponent:
     speed: int
 
 @dataclass
 class SpellListComponent:
     spells: List[str]
+
+@dataclass
+class UltimateSpellListComponent:
+    ultimate_spells: List[str]
 
 @dataclass
 class ShieldComponent:
