@@ -1,0 +1,176 @@
+# 敌人AI配置文件
+# 定义不同敌人的AI行为模板
+
+# AI行为模板
+ai_templates:
+  # 战士型AI - 优先攻击，使用物理技能
+  warrior_ai:
+    name: "战士AI"
+    description: "优先攻击敌人，使用物理技能"
+    behavior_patterns:
+      - type: "target_selection"
+        priority: "lowest_health"  # 优先攻击血量最低的敌人
+        filter: "enemy"
+      - type: "spell_selection"
+        priority: "physical_damage"  # 优先选择物理伤害技能
+        fallback: "basic_attack"
+      - type: "resource_management"
+        energy_threshold: 0.3  # 能量低于30%时使用基础攻击
+        mana_threshold: 0.2    # 法力低于20%时使用基础攻击
+      - type: "defensive_behavior"
+        health_threshold: 0.3  # 血量低于30%时考虑防御
+        use_shield: true
+        use_heal: false
+
+  # 法师型AI - 优先使用法术，保持距离
+  mage_ai:
+    name: "法师AI"
+    description: "优先使用法术攻击，保持安全距离"
+    behavior_patterns:
+      - type: "target_selection"
+        priority: "highest_threat"  # 优先攻击威胁最大的敌人
+        filter: "enemy"
+      - type: "spell_selection"
+        priority: "magic_damage"    # 优先选择魔法伤害技能
+        fallback: "basic_attack"
+      - type: "resource_management"
+        energy_threshold: 0.5  # 能量低于50%时使用基础攻击
+        mana_threshold: 0.1    # 法力低于10%时使用基础攻击
+      - type: "defensive_behavior"
+        health_threshold: 0.4  # 血量低于40%时考虑防御
+        use_shield: true
+        use_heal: true
+
+  # 弓箭手型AI - 远程攻击，优先高伤害技能
+  archer_ai:
+    name: "弓箭手AI"
+    description: "远程攻击，优先使用高伤害技能"
+    behavior_patterns:
+      - type: "target_selection"
+        priority: "lowest_health"  # 优先攻击血量最低的敌人
+        filter: "enemy"
+      - type: "spell_selection"
+        priority: "high_damage"    # 优先选择高伤害技能
+        fallback: "basic_attack"
+      - type: "resource_management"
+        energy_threshold: 0.4  # 能量低于40%时使用基础攻击
+        mana_threshold: 0.3    # 法力低于30%时使用基础攻击
+      - type: "defensive_behavior"
+        health_threshold: 0.5  # 血量低于50%时考虑防御
+        use_shield: false
+        use_heal: false
+
+  # 治疗型AI - 优先治疗队友
+  healer_ai:
+    name: "治疗AI"
+    description: "优先治疗队友，保持队伍生存"
+    behavior_patterns:
+      - type: "target_selection"
+        priority: "ally_lowest_health"  # 优先治疗血量最低的队友
+        filter: "ally"
+      - type: "spell_selection"
+        priority: "healing"             # 优先选择治疗技能
+        fallback: "basic_attack"
+      - type: "resource_management"
+        energy_threshold: 0.6  # 能量低于60%时使用基础攻击
+        mana_threshold: 0.2    # 法力低于20%时使用基础攻击
+      - type: "defensive_behavior"
+        health_threshold: 0.3  # 血量低于30%时考虑防御
+        use_shield: true
+        use_heal: true
+
+  # 狂暴型AI - 攻击力高，防御力低
+  berserker_ai:
+    name: "狂暴AI"
+    description: "高攻击力，低防御力，优先使用终极技能"
+    behavior_patterns:
+      - type: "target_selection"
+        priority: "highest_threat"  # 优先攻击威胁最大的敌人
+        filter: "enemy"
+      - type: "spell_selection"
+        priority: "ultimate_skill"   # 优先使用终极技能
+        fallback: "high_damage"
+      - type: "resource_management"
+        energy_threshold: 0.2  # 能量低于20%时使用基础攻击
+        mana_threshold: 0.1    # 法力低于10%时使用基础攻击
+      - type: "defensive_behavior"
+        health_threshold: 0.2  # 血量低于20%时考虑防御
+        use_shield: false
+        use_heal: false
+
+  # 坦克型AI - 高防御，保护队友
+  tank_ai:
+    name: "坦克AI"
+    description: "高防御力，保护队友，使用护盾技能"
+    behavior_patterns:
+      - type: "target_selection"
+        priority: "highest_threat"  # 优先攻击威胁最大的敌人
+        filter: "enemy"
+      - type: "spell_selection"
+        priority: "defensive_skill"  # 优先选择防御技能
+        fallback: "basic_attack"
+      - type: "resource_management"
+        energy_threshold: 0.4  # 能量低于40%时使用基础攻击
+        mana_threshold: 0.3    # 法力低于30%时使用基础攻击
+      - type: "defensive_behavior"
+        health_threshold: 0.6  # 血量低于60%时考虑防御
+        use_shield: true
+        use_heal: false
+
+# 敌人AI分配
+enemy_ai_assignments:
+  # 哥布林战士 - 使用战士AI
+  goblin_warrior:
+    ai_template: "warrior_ai"
+    custom_behavior:
+      aggression_level: 0.8  # 攻击性较高
+      risk_tolerance: 0.6    # 中等风险承受度
+
+  # 哥布林弓箭手 - 使用弓箭手AI
+  goblin_archer:
+    ai_template: "archer_ai"
+    custom_behavior:
+      aggression_level: 0.7  # 攻击性中等
+      risk_tolerance: 0.4    # 较低风险承受度
+
+  # 兽人狂战士 - 使用狂暴AI
+  orc_berserker:
+    ai_template: "berserker_ai"
+    custom_behavior:
+      aggression_level: 0.9  # 攻击性很高
+      risk_tolerance: 0.8    # 高风险承受度
+
+  # 骷髅战士 - 使用战士AI
+  skeleton_warrior:
+    ai_template: "warrior_ai"
+    custom_behavior:
+      aggression_level: 0.6  # 攻击性中等
+      risk_tolerance: 0.5    # 中等风险承受度
+
+  # 骷髅弓箭手 - 使用弓箭手AI
+  skeleton_archer:
+    ai_template: "archer_ai"
+    custom_behavior:
+      aggression_level: 0.5  # 攻击性较低
+      risk_tolerance: 0.3    # 低风险承受度
+
+  # 黑暗法师 - 使用法师AI
+  dark_mage:
+    ai_template: "mage_ai"
+    custom_behavior:
+      aggression_level: 0.8  # 攻击性较高
+      risk_tolerance: 0.2    # 低风险承受度
+
+  # 龙 - 使用狂暴AI
+  dragon:
+    ai_template: "berserker_ai"
+    custom_behavior:
+      aggression_level: 0.9  # 攻击性很高
+      risk_tolerance: 0.7    # 较高风险承受度
+
+  # 远古龙 - 使用法师AI（更智能）
+  ancient_dragon:
+    ai_template: "mage_ai"
+    custom_behavior:
+      aggression_level: 0.9  # 攻击性很高
+      risk_tolerance: 0.5    # 中等风险承受度 

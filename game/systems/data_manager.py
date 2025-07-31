@@ -1,4 +1,5 @@
 import yaml
+from typing import List, Dict, Any
 
 class DataManager:
     """ <<< 升级: 适配新的结构化法术数据格式 >>> """
@@ -6,6 +7,10 @@ class DataManager:
         self.spell_data = {}
         self.status_effect_data = {}
         self.character_data = {}
+        self.avatar_data = {}
+        self.enemy_data = {}
+        self.battlefield_data = {}
+        self.enemy_ai_data = {}
         self.passive_data = {}
         self.equipment_data = {}
         self.item_data = {}
@@ -32,6 +37,42 @@ class DataManager:
                 self.character_data = yaml.safe_load(f)
         except Exception as e:
             print(f"[错误] 加载角色数据文件{file_path}失败: {e}")
+            raise
+    
+    def load_avatar_data(self, file_path="data/avatars.yaml"):
+        """加载玩家角色模板数据"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.avatar_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载玩家角色模板数据文件{file_path}失败: {e}")
+            raise
+    
+    def load_enemy_data(self, file_path="data/enemies.yaml"):
+        """加载敌人模板数据"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.enemy_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载敌人模板数据文件{file_path}失败: {e}")
+            raise
+    
+    def load_battlefield_data(self, file_path="data/battlefields.yaml"):
+        """加载战场配置数据"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.battlefield_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载战场配置数据文件{file_path}失败: {e}")
+
+    def load_enemy_ai_data(self, file_path: str):
+        """加载敌人AI数据"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.enemy_ai_data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"[错误] 加载敌人AI数据文件{file_path}失败: {e}")
+            self.enemy_ai_data = {}
             raise
     def load_passive_data(self, file_path="data/passives.yaml"):
         try:
@@ -293,3 +334,35 @@ class DataManager:
             if category in self.item_data:
                 item_ids.extend(self.item_data[category].keys())
         return item_ids
+    
+    def get_avatar_data(self, avatar_id: str) -> dict:
+        """获取玩家角色模板数据"""
+        return self.avatar_data.get(avatar_id, {})
+    
+    def get_all_avatar_ids(self) -> list:
+        """获取所有玩家角色模板ID列表"""
+        return list(self.avatar_data.keys())
+    
+    def get_enemy_data(self, enemy_id: str) -> dict:
+        """获取敌人模板数据"""
+        return self.enemy_data.get(enemy_id, {})
+    
+    def get_all_enemy_ids(self) -> list:
+        """获取所有敌人模板ID列表"""
+        return list(self.enemy_data.keys())
+    
+    def get_battlefield_data(self, battlefield_id: str) -> dict:
+        """获取战场配置数据"""
+        return self.battlefield_data.get(battlefield_id, {})
+    
+    def get_all_battlefield_ids(self) -> list:
+        """获取所有战场配置ID列表"""
+        return list(self.battlefield_data.keys())
+
+    def get_enemy_ai_data(self, enemy_template: str) -> Dict[str, Any]:
+        """获取敌人AI数据"""
+        return self.enemy_ai_data.get('enemy_ai_assignments', {}).get(enemy_template, {})
+
+    def get_ai_template(self, template_name: str) -> Dict[str, Any]:
+        """获取AI模板数据"""
+        return self.enemy_ai_data.get('ai_templates', {}).get(template_name, {})

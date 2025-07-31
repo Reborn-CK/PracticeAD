@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, TYPE_CHECKING, Dict, Optional
+from typing import List, TYPE_CHECKING, Dict, Optional, Any
 
 from game.core.entity import Entity
 from game.core.event_bus import EventBus, GameEvent
@@ -59,6 +59,52 @@ class SpellListComponent:
 @dataclass
 class UltimateSpellListComponent:
     ultimate_spells: List[str]
+
+@dataclass
+class BattlefieldComponent:
+    """战场组件，存储当前战场的信息"""
+    battlefield_id: str
+    current_round: int
+    max_rounds: int
+    victory_condition: str
+    defeat_condition: str
+    is_completed: bool = False
+
+@dataclass
+class BattlefieldConfigComponent:
+    """战场配置组件，存储战场的基本配置"""
+    name: str
+    description: str
+    max_players: int
+    starting_avatars: List[str]
+    battlefield_id: str
+
+@dataclass
+class EnemyWaveComponent:
+    """敌人波次组件，存储当前波次的敌人信息"""
+    round_number: int
+    enemies: List[str]  # 简化为敌人模板名称列表
+    is_spawned: bool = False
+
+@dataclass
+class TeamComponent:
+    """队伍组件，标识实体属于哪个队伍"""
+    team_id: str  # "player" 或 "enemy"
+    position: str = "front"  # "front" 或 "back"
+
+@dataclass
+class AIComponent:
+    """AI组件，控制敌人的智能行为"""
+    ai_template: str  # AI模板名称
+    behavior_patterns: List[Dict[str, Any]]  # 行为模式配置
+    custom_behavior: Dict[str, Any]  # 自定义行为参数
+    last_action_time: float = 0.0  # 上次行动时间
+    action_cooldown: float = 1.0   # 行动冷却时间
+
+@dataclass
+class PositionComponent:
+    """位置组件，用于AP值相等时的先手判断"""
+    position_id: int
 
 @dataclass
 class ShieldComponent:

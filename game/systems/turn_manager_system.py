@@ -1,7 +1,7 @@
 from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import RoundStartPayload, ActionRequestPayload, StatQueryPayload, ActionAfterActPayload, PostActionSettlementPayload
-from ..core.components import DeadComponent, SpeedComponent
+from ..core.components import DeadComponent, SpeedComponent, PositionComponent
 from ..core.entity import Entity
 
 class TurnManagerSystem:
@@ -37,8 +37,10 @@ class TurnManagerSystem:
                 self.world.is_running = False
                 return
 
-            #living_entities.sort(key=lambda e: self.get_final_stat(e, "speed", e.get_component(SpeedComponent).speed), reverse=True)
-            living_entities.sort(key=lambda e: e.get_final_stat("speed", e.get_component(SpeedComponent).speed), reverse=True)
+            # 过滤掉没有SpeedComponent的实体
+            living_entities = [e for e in living_entities if e.get_component(SpeedComponent) is not None]
+            # 按速度排序，如果速度相等则按位置ID排序（位置ID小的先手）
+            living_entities.sort(key=lambda e: (e.get_final_stat("speed", e.get_component(SpeedComponent).speed), -e.get_component(PositionComponent).position_id if e.get_component(PositionComponent) else 0), reverse=True)
             self.turn_queue = living_entities
             
             # 先触发状态效果结算事件
@@ -55,6 +57,10 @@ class TurnManagerSystem:
         ready_entities = []
         
         living_entities = [e for e in self.world.entities if not e.has_component(DeadComponent)]
+        
+        # 过滤掉没有SpeedComponent的实体（如战场实体等）
+        living_entities = [e for e in living_entities if e.get_component(SpeedComponent) is not None]
+        
         if len(living_entities) < 2:
             self.world.is_running = False
             return
@@ -62,15 +68,30 @@ class TurnManagerSystem:
         for entity in living_entities:
             if entity.name not in self.ap_bars:
                 self.ap_bars[entity.name] = 0
-            speed = entity.get_final_stat("speed", entity.get_component(SpeedComponent).speed)
+            
+            # 安全检查：确保实体有SpeedComponent
+            speed_comp = entity.get_component(SpeedComponent)
+            if not speed_comp:
+                # 如果没有SpeedComponent，跳过这个实体
+                continue
+                
+            speed = entity.get_final_stat("speed", speed_comp.speed)
             self.ap_bars[entity.name] += speed * self.AP_RECOVERY_RATE
             if self.ap_bars[entity.name] >= self.AP_THRESHOLD:
                 ready_entities.append(entity)
         
         if ready_entities:
-            ready_entities.sort(key=lambda e: self.ap_bars[e.name], reverse=True)
+            # 按AP值排序，如果AP值相等则按位置ID排序（位置ID小的先手）
+            ready_entities.sort(key=lambda e: (self.ap_bars[e.name], -e.get_component(PositionComponent).position_id if e.get_component(PositionComponent) else 0), reverse=True)
             self.acting_entity = ready_entities[0]
             self.is_waiting_for_action = True
+            
+            # 强制刷新UI以显示最新的AP值
+            from .ui_system import UISystem
+            ui_system = self.world.get_system(UISystem)
+            if ui_system:
+                ui_system.display_status_panel()
+            
             self.event_bus.dispatch(GameEvent(EventName.ACTION_REQUEST, ActionRequestPayload(self.acting_entity)))
 
     def on_action_after_act(self, event: GameEvent):

@@ -14,6 +14,9 @@ class World:
         self.is_running = False
 
     def add_entity(self, e: Entity): self.entities.append(e); return e
+    def remove_entity(self, e: Entity): 
+        if e in self.entities:
+            self.entities.remove(e)
     def get_entity_by_name(self, name: str): return next((e for e in self.entities if e.name == name), None)
     def add_system(self, s: Any, priority: int = 100):
         self.systems.append((priority, s))

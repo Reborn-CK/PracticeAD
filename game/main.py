@@ -9,7 +9,7 @@ from .systems.status_effect_system import StatusEffectSystem
 from .systems.interaction_system import InteractionSystem
 from .systems.turn_manager_system import TurnManagerSystem
 from .systems.player_input_system import PlayerInputSystem
-from .systems.enemy_ai_system import EnemyAISystem
+from .systems.simple_ai_system import SimpleEnemyAISystem
 from .systems.spell_cast_system import SpellCastSystem
 from .systems.mana_system import ManaSystem
 from .systems.energy_system import EnergySystem
@@ -20,6 +20,8 @@ from .systems.dead_system import DeadSystem
 from .systems.character_factory import CharacterFactory
 from .systems.equipment_system import EquipmentSystem
 from .systems.item_system import ItemSystem
+from .systems.battlefield_system import BattlefieldSystem
+from .systems.battle_end_system import BattleEndSystem
 from .status_effects.status_effect_factory import StatusEffectFactory
 
 def main():
@@ -33,6 +35,10 @@ def main():
     data_manager.load_status_effect_data()
     data_manager.load_passive_data()
     data_manager.load_character_data()
+    data_manager.load_avatar_data()
+    data_manager.load_enemy_data()
+    data_manager.load_battlefield_data()
+    data_manager.load_enemy_ai_data("data/enemies_ai.yaml")
     data_manager.load_equipment_data()
     data_manager.load_item_data()
     world = World(event_bus)
@@ -62,7 +68,7 @@ def main():
 
 
     world.add_system(PlayerInputSystem(event_bus, data_manager, world), priority=100)
-    world.add_system(EnemyAISystem(event_bus, world), priority=100)
+    world.add_system(SimpleEnemyAISystem(event_bus, data_manager, world), priority=100)
     
     # --- 纯事件驱动，无update，优先级无所谓 ---
     ultimate_charge_system = UltimateChargeSystem(event_bus)
@@ -75,14 +81,24 @@ def main():
     world.add_system(DeadSystem(event_bus, world))
     world.add_system(EquipmentSystem(event_bus, data_manager))
     world.add_system(ItemSystem(event_bus, data_manager, world))
+    world.add_system(BattlefieldSystem(event_bus, data_manager, world))
+    world.add_system(BattleEndSystem(event_bus, world))
 
-    # 3. 创建角色
+    # 3. 创建角色（可选：使用战场系统或直接创建角色）
     print("创建角色...")
     character_factory = CharacterFactory(event_bus, data_manager)
-    hero = character_factory.create_character("hero", world)
-    boss = character_factory.create_character("boss", world)
+    
+    # 方式1：使用战场系统（推荐）
+    # 初始化战场
+    from .core.event_bus import GameEvent
+    from .core.enums import EventName
+    event_bus.dispatch(GameEvent(EventName.BATTLEFIELD_INIT_REQUEST, {"battlefield_id": "tutorial_battlefield"}))
+    
+    # 方式2：直接创建角色（向后兼容）
+    # hero = character_factory.create_character("hero", world)
+    # boss = character_factory.create_character("boss", world)
+    # print(f"角色创建完成: {hero.name}, {boss.name}")
 
-    print(f"角色创建完成: {hero.name}, {boss.name}")
     print("游戏开始!")
 
     # 4. 开始游戏循环

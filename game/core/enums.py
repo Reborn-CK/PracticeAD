@@ -42,6 +42,13 @@ class EventName(Enum):
     USE_ITEM_REQUEST = auto()
     PLAYER_ITEM_CHOICE = auto()
     PLAYER_ITEM_TARGET_CHOICE = auto()
+    
+    # 战场系统相关事件
+    BATTLEFIELD_INIT_REQUEST = auto()
+    BATTLEFIELD_INIT_COMPLETE = auto()
+    BATTLEFIELD_COMPLETE = auto()
+    ROUND_END = auto()
+    ENTITY_DEATH = auto()
 
 class BattleTurnRule(Enum):
     TURN_BASED = auto()

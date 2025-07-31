@@ -2,7 +2,8 @@ from ..core.entity import Entity
 from ..core.components import (HealthComponent, ManaComponent, SpeedComponent, SpellListComponent, UltimateSpellListComponent,
                               ShieldComponent, StatusEffectContainerComponent, PlayerControlledComponent,
                               AIControlledComponent, CritComponent, OverhealToShieldComponent, StatsComponent,
-                              EquipmentComponent, InventoryComponent, EnergyComponent, UltimateChargeComponent)
+                              EquipmentComponent, InventoryComponent, EnergyComponent, UltimateChargeComponent,
+                              PositionComponent, TeamComponent, AIComponent)
 from ..core.event_bus import EventBus
 from ..core.enums import EventName
 from ..core.payloads import LogRequestPayload
@@ -18,13 +19,37 @@ class CharacterFactory:
         self.passive_factory = PassiveFactory(data_manager)
     
     def create_character(self, character_id: str, world) -> Entity:
-        """根据角色ID创建角色实体"""
+        """根据角色ID创建角色实体（向后兼容）"""
         character_data = self.data_manager.get_character_data(character_id)
         if not character_data:
             raise ValueError(f"未找到角色配置: {character_id}")
         
         # 创建实体
         entity = world.add_entity(Entity(character_data['name'], self.event_bus))
+    
+    def create_character_from_template(self, template_id: str, entity_name: str = None) -> Entity:
+        """根据模板ID创建角色实体"""
+        # 首先尝试从avatar数据中查找
+        template_data = self.data_manager.get_avatar_data(template_id)
+        if template_data:
+            return self._create_character_from_data(template_data, entity_name or template_data.get('name', template_id), template_id)
+        
+        # 然后尝试从enemy数据中查找
+        template_data = self.data_manager.get_enemy_data(template_id)
+        if template_data:
+            return self._create_character_from_data(template_data, entity_name or template_data.get('name', template_id), template_id)
+        
+        # 最后尝试从character数据中查找（向后兼容）
+        template_data = self.data_manager.get_character_data(template_id)
+        if template_data:
+            return self._create_character_from_data(template_data, entity_name or template_data.get('name', template_id), template_id)
+        
+        raise ValueError(f"未找到角色模板: {template_id}")
+    
+    def _create_character_from_data(self, character_data: dict, entity_name: str, template_id: str = None) -> Entity:
+        """根据角色数据创建角色实体"""
+        # 创建实体
+        entity = Entity(entity_name, self.event_bus)
         
         # 添加基础组件
         stats = character_data['stats']
@@ -55,23 +80,30 @@ class CharacterFactory:
         entity.add_component(InventoryComponent())
         
         # 装备预设的装备
-        self._equip_preset_equipment(entity, equipment_slots, character_id)
+        self._equip_preset_equipment(entity, equipment_slots, entity_name)
         
         # 添加预设的物品
-        self._add_preset_items(entity, character_id)
+        self._add_preset_items(entity, entity_name)
         
         # 更新装备属性
-        self._update_equipment_stats(entity, character_id)
+        self._update_equipment_stats(entity, entity_name)
         
         # 根据类型添加控制组件
         if character_data['type'] == 'player':
             entity.add_component(PlayerControlledComponent())
         elif character_data['type'] == 'enemy':
             entity.add_component(AIControlledComponent())
+            # 为敌人添加AI组件
+            if template_id:
+                self._add_ai_component(entity, template_id)
         
         # 添加被动能力组件
         passive_versions = character_data.get('passives', [])
         self._add_passive_components(entity, passive_versions)
+        
+        # 如果是敌人，添加AI组件
+        if entity.has_component(TeamComponent) and entity.get_component(TeamComponent).team_id == "enemy":
+            self._add_ai_component(entity, character_data.get('template_id', entity.name))
         
         return entity
     
@@ -89,6 +121,31 @@ class CharacterFactory:
             except Exception as e:
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[PASSIVE Load]", f"创建被动能力组件失败: {e}")))
                 continue
+
+    def _add_ai_component(self, entity: Entity, template_id: str):
+        """添加AI组件"""
+        # 获取敌人AI数据
+        enemy_ai_data = self.data_manager.get_enemy_ai_data(template_id)
+        if not enemy_ai_data:
+            return
+        
+        ai_template_name = enemy_ai_data.get('ai_template')
+        if not ai_template_name:
+            return
+        
+        # 获取AI模板数据
+        ai_template = self.data_manager.get_ai_template(ai_template_name)
+        if not ai_template:
+            return
+        
+        # 创建AI组件
+        ai_component = AIComponent(
+            ai_template=ai_template_name,
+            behavior_patterns=ai_template.get('behavior_patterns', []),
+            custom_behavior=enemy_ai_data.get('custom_behavior', {})
+        )
+        
+        entity.add_component(ai_component)
     
     def _equip_preset_equipment(self, entity: Entity, equipment_slots: dict, character_id: str):
         """装备预设的装备"""
@@ -138,7 +195,7 @@ class CharacterFactory:
             return
         
         # 根据角色ID添加不同的初始物品
-        if character_id == "hero":
+        if character_id == "hero" or "hero" in character_id.lower():
             # 给勇者一些初始物品
             initial_items = {
                 "minor_healing_potion": 3,  # 3个小型治疗药水
@@ -154,7 +211,7 @@ class CharacterFactory:
                         "[INVENTORY]", f"✅ {entity.name} 获得了 {item_data['name']} x{quantity}"
                     )))
         
-        elif character_id == "boss":
+        elif character_id == "boss" or "boss" in character_id.lower():
             # 给BOSS一些初始物品
             initial_items = {
                 "medium_healing_potion": 1,  # 1个中型治疗药水
@@ -181,8 +238,13 @@ class CharacterFactory:
         base_attack = 0
         base_defense = 0
         
-        # 从角色数据中获取基础属性
+        # 从角色数据中获取基础属性（支持多种数据源）
         character_data = self.data_manager.get_character_data(character_id)
+        if not character_data:
+            character_data = self.data_manager.get_avatar_data(character_id)
+        if not character_data:
+            character_data = self.data_manager.get_enemy_data(character_id)
+        
         if character_data and 'stats' in character_data:
             base_attack = character_data['stats'].get('attack', 0)
             base_defense = character_data['stats'].get('defense', 0)

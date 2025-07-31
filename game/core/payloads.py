@@ -240,3 +240,16 @@ class UltimateChargeChangeRequestPayload:
     target: 'Entity'
     amount: float
     change_type: str  # "add" or "consume"
+
+@dataclass
+class PlayerSpellChoicePayload:
+    """玩家技能选择事件payload"""
+    caster: 'Entity'
+    spell_id: str
+
+@dataclass
+class PlayerTargetChoicePayload:
+    """玩家目标选择事件payload"""
+    caster: 'Entity'
+    spell_id: str
+    target: 'Entity'

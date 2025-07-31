@@ -1,0 +1,133 @@
+# 敌人模板配置文件
+# 定义游戏中所有敌人类型的模板
+
+# 哥布林战士 - 基础近战敌人
+goblin_warrior:
+  name: "哥布林战士"
+  type: "enemy"
+  description: "手持短剑的哥布林战士，擅长近战攻击"
+  
+  stats:
+    hp: 60
+    max_hp: 60
+    mana: 200
+    max_mana: 200
+    energy: 2
+    max_energy: 2
+    energy_recovery: 0.8
+    ultimate_charge: 0
+    max_ultimate_charge: 150
+    charge_per_spell: 8
+    speed: 45
+    shield: 0
+    attack: 35
+    defense: 20
+    crit_chance: 0.05
+    crit_damage_multiplier: 1.5
+  
+  passives:
+    - "fire_resistance_minor"
+  
+  equipment_slots:
+    main_hand: "iron_sword"
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "normal_attack_01"
+    - "energy_burst_01"
+
+# 哥布林弓箭手 - 远程敌人
+goblin_archer:
+  name: "哥布林弓箭手"
+  type: "enemy"
+  description: "使用弓箭的哥布林，擅长远程攻击"
+  
+  stats:
+    hp: 40
+    max_hp: 40
+    mana: 150
+    max_mana: 150
+    energy: 3
+    max_energy: 3
+    energy_recovery: 1.0
+    ultimate_charge: 0
+    max_ultimate_charge: 150
+    charge_per_spell: 10
+    speed: 60
+    shield: 0
+    attack: 30
+    defense: 15
+    crit_chance: 0.1
+    crit_damage_multiplier: 2.0
+  
+  passives:
+    - "fire_resistance_minor"
+  
+  equipment_slots:
+    main_hand: null
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "normal_attack_01"
+  
+
+# 兽人狂战士 - 强力近战敌人
+orc_berserker:
+  name: "兽人狂战士"
+  type: "enemy"
+  description: "狂暴的兽人战士，拥有强大的攻击力"
+  
+  stats:
+    hp: 120
+    max_hp: 120
+    mana: 300
+    max_mana: 300
+    energy: 2
+    max_energy: 2
+    energy_recovery: 0.6
+    ultimate_charge: 0
+    max_ultimate_charge: 200
+    charge_per_spell: 12
+    speed: 35
+    shield: 0
+    attack: 70
+    defense: 30
+    crit_chance: 0.15
+    crit_damage_multiplier: 2.2
+  
+  passives:
+    - "fire_resistance_major"
+  
+  equipment_slots:
+    main_hand: null
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "normal_attack_02"
+  
+  ultimate_spells:
+    - "ultimate_01"

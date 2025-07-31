@@ -45,6 +45,10 @@ class UISystem:
         is_ap_based = turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED
         
         for entity in self.world.entities:
+            # 只显示有战斗相关组件的实体（有HealthComponent或SpeedComponent）
+            if not (entity.has_component(HealthComponent) or entity.has_component(SpeedComponent)):
+                continue
+                
             if entity.has_component(DeadComponent):
                 status_str = f"[{entity.name}] (已倒下)"
             else:
@@ -183,13 +187,7 @@ class UISystem:
         shield_change = next((r for r in payload.resource_changes if r['resource_name'] == 'shield'), None)
         
         # 根据效果变化信息构建播报内容
-        if payload.no_effect_produced:
-            # 没有产生任何效果
-            if is_dot_damage:
-                print(f"**战斗持续伤害**: {base_info}，但没有产生任何效果！")
-            else:
-                print(f"**战斗**: {base_info}，但没有产生任何效果！")
-        else:
+        if not payload.no_effect_produced:
             # 有实际效果产生，显示具体变化
             effect_parts = []
             

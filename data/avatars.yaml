@@ -1,0 +1,249 @@
+# 玩家角色模板配置文件
+# 定义游戏中所有可用的玩家角色模板
+
+# 勇者 - 平衡型角色
+hero:
+  name: "勇者"
+  type: "player"
+  description: "一位勇敢的战士，拥有平衡的属性和多样的技能"
+  
+  # 基础属性
+  stats:
+    hp: 100
+    max_hp: 100
+    mana: 500
+    max_mana: 500
+    energy: 3
+    max_energy: 3
+    energy_recovery: 1.0
+    ultimate_charge: 0
+    max_ultimate_charge: 200
+    charge_per_spell: 10
+    speed: 60
+    shield: 0
+    attack: 50
+    defense: 30
+    crit_chance: 0.1
+    crit_damage_multiplier: 2.0
+  
+  # 被动能力
+  passives:
+    - "fire_resistance_major"
+    - "counter_strike_major"
+  
+  # 装备槽
+  equipment_slots:
+    main_hand: "iron_sword"
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  # 技能列表
+  spells:
+    - "normal_attack_01"
+    - "fireball_01"
+    - "energy_blast_02"
+    - "energy_shield_01"
+    - "energy_restore_01"
+  
+  # 终极技能列表
+  ultimate_spells:
+    - "ultimate_01"
+    - "ultimate_02"
+  
+# 法师 - 魔法型角色
+mage:
+  name: "法师"
+  type: "player"
+  description: "精通魔法的施法者，拥有强大的法术攻击力"
+  
+  stats:
+    hp: 80
+    max_hp: 80
+    mana: 800
+    max_mana: 800
+    energy: 4
+    max_energy: 4
+    energy_recovery: 1.2
+    ultimate_charge: 0
+    max_ultimate_charge: 200
+    charge_per_spell: 15
+    speed: 50
+    shield: 0
+    attack: 30
+    defense: 20
+    crit_chance: 0.15
+    crit_damage_multiplier: 2.5
+  
+  equipment_slots:
+    main_hand: ""
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "fireball_02"
+    - "thunderbolt_01"
+    - "heal_02"
+    - "energy_restore_01"
+  
+  ultimate_spells:
+    - "ultimate_01"
+    - "ultimate_02"
+  
+# 战士 - 坦克型角色
+warrior:
+  name: "战士"
+  type: "player"
+  description: "强壮的战士，拥有高生命值和防御力"
+  
+  stats:
+    hp: 150
+    max_hp: 150
+    mana: 300
+    max_mana: 300
+    energy: 2
+    max_energy: 2
+    energy_recovery: 0.8
+    ultimate_charge: 0
+    max_ultimate_charge: 200
+    charge_per_spell: 8
+    speed: 40
+    shield: 0
+    attack: 60
+    defense: 50
+    crit_chance: 0.08
+    crit_damage_multiplier: 1.8
+  
+  passives:
+    - "fire_resistance_major"
+  
+  equipment_slots:
+    main_hand: "iron_sword"
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "normal_attack_02"
+    - "fireball_01"
+    - "energy_shield_01"
+  
+  ultimate_spells:
+    - "ultimate_01"
+    - "ultimate_02"
+  
+# 弓箭手 - 远程型角色
+archer:
+  name: "弓箭手"
+  type: "player"
+  description: "敏捷的弓箭手，擅长远程攻击和快速移动"
+  
+  stats:
+    hp: 90
+    max_hp: 90
+    mana: 400
+    max_mana: 400
+    energy: 3
+    max_energy: 3
+    energy_recovery: 1.0
+    ultimate_charge: 0
+    max_ultimate_charge: 200
+    charge_per_spell: 12
+    speed: 80
+    shield: 0
+    attack: 45
+    defense: 25
+    crit_chance: 0.2
+    crit_damage_multiplier: 2.2
+  
+  passives:
+    - "fire_resistance_minor"
+  
+  equipment_slots:
+    main_hand: null
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "normal_attack_01"
+    - "energy_burst_01"
+  
+  ultimate_spells:
+    - "ultimate_01"
+    - "ultimate_02"
+  
+# 牧师 - 治疗型角色
+priest:
+  name: "牧师"
+  type: "player"
+  description: "神圣的牧师，专注于治疗和支援队友"
+  
+  stats:
+    hp: 85
+    max_hp: 85
+    mana: 600
+    max_mana: 600
+    energy: 3
+    max_energy: 3
+    energy_recovery: 1.0
+    ultimate_charge: 0
+    max_ultimate_charge: 200
+    charge_per_spell: 10
+    speed: 45
+    shield: 0
+    attack: 25
+    defense: 35
+    crit_chance: 0.05
+    crit_damage_multiplier: 1.5
+  
+  passives:
+    - "fire_resistance_minor"
+  
+  equipment_slots:
+    main_hand: null
+    off_hand: null
+    chest: null
+    head: null
+    legs: null
+    feet: null
+    ring: null
+    necklace: null
+    belt: null
+    cloak: null
+  
+  spells:
+    - "heal_01"
+    - "heal_02"
+    - "blessing_stance_01"
+    - "purify_01"
+    - "energy_restore_01"
+  
+  ultimate_spells:
+    - "ultimate_01"
+    - "ultimate_02" 

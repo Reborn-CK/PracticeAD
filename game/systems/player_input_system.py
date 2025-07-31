@@ -38,7 +38,7 @@ class PlayerInputSystem:
     
     def _show_main_menu(self, actor: Entity):
         """显示主菜单"""
-        options = ["法术", "终极技能", "物品", "查看状态"]
+        options = ["法术", "终极技能", "物品", "查看状态", "结束回合"]
         self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
             prompt=f"[{actor.name}] 的回合，请选择行动:",
             options=options,
@@ -86,8 +86,6 @@ class PlayerInputSystem:
         
         # 添加返回选项
         options.append("返回上级菜单")
-        # 添加结束回合选项
-        options.append("结束回合")
         
         self.event_bus.dispatch(GameEvent(EventName.UI_DISPLAY_OPTIONS, UIDisplayOptionsPayload(
             prompt=f"选择法术:",
@@ -337,6 +335,8 @@ class PlayerInputSystem:
                 self._show_item_menu(actor)
             elif choice_index == 3:  # 查看状态
                 self._show_status_menu(actor)
+            elif choice_index == 4:  # 结束回合
+                self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionAfterActPayload(actor)))
         elif menu_type == "spell":
             # 法术菜单选择
             spell_comp = actor.get_component(SpellListComponent)
@@ -347,9 +347,6 @@ class PlayerInputSystem:
             elif choice_index == len(spell_comp.spells):
                 # 选择了返回
                 self._show_main_menu(actor)
-            elif choice_index == len(spell_comp.spells) + 1:
-                # 选择了结束回合
-                self.event_bus.dispatch(GameEvent(EventName.ACTION_AFTER_ACT, ActionAfterActPayload(actor)))
         elif menu_type == "ultimate":
             # 终极技能菜单选择
             ultimate_spells = context.get("ultimate_spells", [])

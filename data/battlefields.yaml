@@ -1,0 +1,44 @@
+# 战场配置文件
+# 定义游戏中所有战场场景的配置
+
+# 新手教程战场
+tutorial_battlefield:
+  name: "新手教程"
+  description: "一个简单的教程战场，帮助新手熟悉游戏机制"
+  
+  # 战场配置
+  config:
+    max_rounds: 1  # 最大回合数
+    victory_condition: "all_enemies_defeated"  # 胜利条件：击败所有敌人
+    defeat_condition: "all_players_defeated"   # 失败条件：所有玩家被击败
+    
+  # 玩家队伍配置
+  player_team:
+    max_players: 3  # 最大玩家数量
+    starting_avatars: ["hero", "mage", "warrior"]  # 起始角色模板
+    positions:
+      1:  # 位置ID 1
+        avatar: "hero"
+      #   # 未来扩展：三维坐标
+      #   #3d_position:{x: 0, y: 0, z: 0}
+      #   # 未来扩展：特殊状态
+      #   # status_effects: []
+      #   # terrain_bonus: null
+      # 2:  # 位置ID 2
+      #   avatar: "mage"
+      # 3:  # 位置ID 3
+      #   avatar: "warrior"
+    
+  # 敌人队伍配置
+  enemy_teams:
+    max_enemies: 5
+    stages_enemies:
+    - round: 1  # 第1轮
+      enemies: ["goblin_warrior", "goblin_archer"]
+    positions:
+      4:
+        enemy: "goblin_warrior"
+      # 5:
+      #   enemy: "goblin_warrior"
+      # 6:
+      #   enemy: "goblin_archer"
