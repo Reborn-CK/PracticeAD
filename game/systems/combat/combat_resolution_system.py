@@ -123,7 +123,9 @@ class CombatResolutionSystem:
         new_status_effects = target_status_effects_after > target_status_effects_before
         
         # 检查是否有实际效果产生
-        has_effect = health_changed or shield_changed or new_status_effects
+        debuffs_cleansed = getattr(payload, 'debuffs_cleansed', 0)
+        buffs_gained = getattr(payload, 'buffs_gained', 0)
+        has_effect = health_changed or shield_changed or new_status_effects or debuffs_cleansed > 0 or buffs_gained > 0
         
         # 构建资源变化列表
         resource_changes = []

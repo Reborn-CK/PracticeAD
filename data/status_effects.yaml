@@ -31,7 +31,6 @@ poison:
   stacking: "stack_intensity"
   versions:
     - version_id: "poison_01"
-      name: "中毒1"
       description: "基础中毒效果，可堆叠层数。"
       stack_count: 0
       stack_intensity: 2
@@ -42,7 +41,6 @@ poison:
         damage_type: "poison"
         is_reflection: true
     - version_id: "poison_02"
-      name: "中毒2"
       description: "中级中毒效果，可堆叠层数。"
       stack_count: 0
       stack_intensity: 3
@@ -139,3 +137,23 @@ stun:
       context:
         skip_turn: true
 
+# 持续恢复
+continuous_heal:
+  name: "持续恢复"
+  description: "持续恢复，每回合恢复生命值。"
+  category: "magic_buff"
+  logic: "heal"
+  stacking: "refresh_duration"
+  versions:
+    - version_id: "continuous_heal_01"
+      name: "持续恢复"
+      description: "基础持续恢复效果，每回合恢复生命值。"
+      duration: 3
+      stack_intensity: 1
+      heal_number: 2
+      max_stacks: 10
+      context:
+        heal_per_round: 5
+        heal_type: "light"
+        heal_percentage: 0.1
+        affected_stat: "target_max_hp"

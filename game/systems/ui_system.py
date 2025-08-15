@@ -27,7 +27,11 @@ class UISystem:
         if turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
             current_time = time.time()
             if current_time - self.last_refresh_time >= self.UI_REFRESH_INTERVAL:
-                self.display_status_panel()
+                # 在等待行动状态时也刷新UI，确保AP值显示正确
+                # 但避免在状态效果结算期间重复刷新
+                if not hasattr(self, '_status_effects_resolving') or not self._status_effects_resolving:
+                    self.display_status_panel()
+                    self.last_refresh_time = current_time
 
     def _clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -97,8 +101,16 @@ class UISystem:
                             poison_str += f"({poison_effect.stack_count}层)"
                         effects_list.append(poison_str)
                     
+                    # 特殊处理持续恢复效果 - 显示多个持续恢复状态
+                    heal_effects = [e for e in container.effects if e.effect_id == "continuous_heal_01"]
+                    if heal_effects:
+                        heal_str = f"持续恢复 x{len(heal_effects)}个"
+                        for i, heal_effect in enumerate(heal_effects, 1):
+                            heal_str += f"({heal_effect.stack_count}层)"
+                        effects_list.append(heal_str)
+                    
                     # 处理其他效果
-                    other_effects = [e for e in container.effects if e.effect_id != "poison_01"]
+                    other_effects = [e for e in container.effects if e.effect_id not in ("poison_01", "continuous_heal_01")]
                     for e in other_effects:
                         if e.stacking == "stack_intensity":
                             duration_str = f"({e.duration}回合)" if e.duration is not None else "(永久)"
@@ -137,7 +149,14 @@ class UISystem:
         turn_manager = self.world.get_system(TurnManagerSystem)
         if turn_manager.battle_turn_rule == BattleTurnRule.TURN_BASED:
             self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"[UI]**状态效果结算完毕**")))
+        
+        # 状态效果结算完成后刷新UI
         self.display_status_panel()
+        self.last_refresh_time = time.time()
+        
+        # 清除状态效果结算标志
+        if hasattr(self, '_status_effects_resolving'):
+            self._status_effects_resolving = False
 
     def on_display_options(self, event: GameEvent):
         payload: UIDisplayOptionsPayload = event.payload
@@ -255,7 +274,11 @@ class UISystem:
                         if effect.stacking == "stack_intensity":
                             new_effects.append(f"{effect.name} x{effect.stack_count} ({effect.duration}回合)")
                         else:
-                            new_effects.append(f"{effect.name} ({effect.duration}回合)")
+                            # 对于持续恢复和中毒等效果，显示层数而不是持续时间
+                            if effect.effect_id in ("continuous_heal_01", "poison_01"):
+                                new_effects.append(f"{effect.name} ({effect.stack_count}层)")
+                            else:
+                                new_effects.append(f"{effect.name} ({effect.duration}回合)")
                     
                     if new_effects:
                         effect_parts.append(f"{payload.target.name} 获得状态效果: {', '.join(new_effects)}")
@@ -269,12 +292,7 @@ class UISystem:
                     print(f"**战斗持续伤害**: {base_info}，{effects_str}！")
                 else:
                     print(f"**战斗**: {base_info}，{effects_str}！")
-            else:
-                # 有变化但无法具体描述的情况
-                if is_dot_damage:
-                    print(f"**战斗持续伤害**: {base_info}，产生了效果！")
-                else:
-                    print(f"**战斗**: {base_info}，产生了效果！")
+            # 移除无效的"产生了效果！"播报，因为如果effect_parts为空，说明没有具体的效果变化
         
         # 显示被动触发信息
         if payload.passive_triggers:

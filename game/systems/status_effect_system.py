@@ -8,6 +8,7 @@ from ..core.payloads import (ApplyStatusEffectRequestPayload, RemoveStatusEffect
 from ..core.components import StatusEffectContainerComponent, DeadComponent
 from ..status_effects.status_effect import StatusEffect
 from .turn_manager_system import TurnManagerSystem
+from .ui_system import UISystem
 
 class StatusEffectSystem:
     def __init__(self, event_bus: EventBus, world: 'World'): # type: ignore
@@ -15,6 +16,7 @@ class StatusEffectSystem:
         self.world = world
 
         self.event_bus.subscribe(EventName.ROUND_START, self.on_round_start)
+        self.event_bus.subscribe(EventName.ACTION_REQUEST, self.on_action_request)
         self.event_bus.subscribe(EventName.APPLY_STATUS_EFFECT_REQUEST, self.on_apply_effect)
         self.event_bus.subscribe(EventName.REMOVE_STATUS_EFFECT_REQUEST, self.on_remove_effect)
         self.event_bus.subscribe(EventName.UPDATE_STATUS_EFFECTS_DURATION_REQUEST, self.on_update_effects_duration)
@@ -35,14 +37,17 @@ class StatusEffectSystem:
             container = target.add_component(StatusEffectContainerComponent())
         
         # 特殊处理中毒效果
-        if effect.effect_id == "poison_01":
+        if effect.effect_id.startswith("poison_"):
             self._apply_poison_effect(target, effect, container)
+        # 特殊处理持续恢复效果
+        elif effect.effect_id == "continuous_heal_01":
+            self._apply_heal_effect(target, effect, container)
         else:
             self._apply_normal_effect(target, effect, container)
     
     def _apply_poison_effect(self, target, effect, container):
         """应用中毒效果的特殊逻辑"""
-        existing_poison_effects = [e for e in container.effects if e.effect_id == "poison_01"]
+        existing_poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
         
         # 使用PoisonEffectLogic处理中毒效果的应用
         poison_logic = effect.logic
@@ -58,7 +63,7 @@ class StatusEffectSystem:
                     category=effect.category,
                     stacking=effect.stacking,
                     max_stacks=effect.max_stacks,
-                    stack_count=effect.stack_count,
+                    stack_count=effect.stack_intensity,  # 使用stack_intensity作为初始层数
                     stack_intensity=effect.stack_intensity,
                     poison_number=effect.poison_number,
                     caster=effect.caster,
@@ -68,6 +73,38 @@ class StatusEffectSystem:
                 container.effects.append(new_poison_effect)
                 if new_poison_effect.logic:
                     new_poison_effect.logic.on_apply(target, new_poison_effect, self.event_bus)
+        else:
+            # 回退到默认逻辑
+            self._apply_normal_effect(target, effect, container)
+    
+    def _apply_heal_effect(self, target, effect, container):
+        """应用持续恢复效果的特殊逻辑"""
+        existing_heal_effects = [e for e in container.effects if e.effect_id == "continuous_heal_01"]
+        
+        # 使用HealOverTimeEffect处理持续恢复效果的应用
+        heal_logic = effect.logic
+        if hasattr(heal_logic, 'apply_heal_effects'):
+            added_count = heal_logic.apply_heal_effects(target, effect, existing_heal_effects, self.event_bus)
+            
+            # 创建并添加新的持续恢复状态
+            for i in range(added_count):
+                new_heal_effect = StatusEffect(
+                    effect_id=effect.effect_id,
+                    name=effect.name,
+                    duration=effect.duration,
+                    category=effect.category,
+                    stacking=effect.stacking,
+                    max_stacks=effect.max_stacks,
+                    stack_count=effect.stack_count,
+                    stack_intensity=effect.stack_intensity,
+                    heal_number=getattr(effect, 'heal_number', 1),
+                    caster=effect.caster,
+                    context=effect.context,
+                    logic=effect.logic
+                )
+                container.effects.append(new_heal_effect)
+                if new_heal_effect.logic:
+                    new_heal_effect.logic.on_apply(target, new_heal_effect, self.event_bus)
         else:
             # 回退到默认逻辑
             self._apply_normal_effect(target, effect, container)
@@ -146,59 +183,87 @@ class StatusEffectSystem:
                 effect.duration += payload.change
                 self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{payload.target.name}] 状态效果 {payload.effect_id} 的持续时间更新为 {effect.duration} 回合")))
 
+    def on_action_request(self, event: GameEvent):
+        """角色行动前，结算该角色的状态效果"""
+        from ..core.payloads import ActionRequestPayload
+        
+        payload: ActionRequestPayload = event.payload
+        acting_entity = payload.acting_entity
+        
+        if acting_entity.has_component(DeadComponent):
+            return
+            
+        # 检查战斗模式
+        turn_manager = self.world.get_system(TurnManagerSystem)
+        if turn_manager and turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
+            # AP模式下，为每个角色都进行状态效果结算，每个角色结算后都刷新UI
+            self._settle_status_effects_before_action(acting_entity, refresh_ui=True)
+            # 设置标志，表示已经开始状态效果结算
+            if not hasattr(self, '_status_effects_settled'):
+                self._status_effects_settled = True
+        else:
+            # 回合制模式下，在角色行动前进行状态效果结算
+            self._settle_status_effects_before_action(acting_entity)
+    
+    def _settle_status_effects_before_action(self, acting_entity, refresh_ui=True):
+        """在角色行动前结算状态效果"""
+        container = acting_entity.get_component(StatusEffectContainerComponent)
+        if not container:
+            return
+            
+        # 设置状态效果结算标志，避免UI重复刷新
+        if refresh_ui:
+            ui_system = self.world.get_system(UISystem)
+            if ui_system:
+                ui_system._status_effects_resolving = True
+            
+        self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"---[{acting_entity.name}] 行动前状态效果结算---")))
+        
+        # 特殊处理中毒效果（所有版本）
+        poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
+        if poison_effects:
+            self._tick_poison_effects(acting_entity, poison_effects, container)
+
+        # 特殊处理持续恢复效果
+        heal_effects = [e for e in container.effects if e.effect_id.startswith("continuous_heal_")]
+        if heal_effects:
+            self._tick_heal_effects(acting_entity, heal_effects, container)
+
+        # 处理其他效果（排除已特殊处理的中毒和持续恢复效果）
+        other_effects = [e for e in container.effects if not e.effect_id.startswith("poison_") and not e.effect_id.startswith("continuous_heal_")]
+        self._tick_normal_effects(acting_entity, other_effects, container)
+        
+        # 状态效果结算完成后，触发UI刷新事件以展示debuff变化
+        if refresh_ui:
+            self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
+
     def on_round_start(self, event: GameEvent):
         """回合开始时，处理所有实体的状态效果"""
         turn_manager = self.world.get_system(TurnManagerSystem)
         if turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
             return  # AP模式下，状态效果在角色行动后结算
 
-        self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", "---状态效果结算阶段---")))
-        
-        # 先进行状态效果结算
-        for entity in self.world.entities:
-            if entity.has_component(DeadComponent):
-                continue
-
-            container = entity.get_component(StatusEffectContainerComponent)
-            if not container: continue
-
-            # 特殊处理中毒效果（所有版本）
-            poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
-            if poison_effects:
-                self._tick_poison_effects(entity, poison_effects, container)
-
-            # 处理其他效果
-            other_effects = [e for e in container.effects if not e.effect_id.startswith("poison_")]
-            self._tick_normal_effects(entity, other_effects, container)
-        
-        # 状态效果结算完成后，触发UI刷新事件
-        self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
+        # 回合制模式下，状态效果在角色行动前结算，不在回合开始时结算
+        # 这样可以避免重复结算
+        pass
     
     def on_post_action_settlement(self, event: GameEvent):
         """每个角色行动后，结算其自身的状态效果"""
         payload: PostActionSettlementPayload = event.payload
         turn_manager = self.world.get_system(TurnManagerSystem)
-        if turn_manager.battle_turn_rule == BattleTurnRule.TURN_BASED:
-            # 回合制模式下，这里只做必要结算，不减持续时间
-            # 持续时间在 on_round_start 中处理
+        
+        # 回合制模式下，状态效果在角色行动前结算，不在行动后结算
+        if turn_manager is None or turn_manager.battle_turn_rule == BattleTurnRule.TURN_BASED:
+            # 确保派发完成事件以刷新UI
+            self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
             return
 
+        # AP模式下，状态效果已经在获得回合时结算过了，这里只确保UI刷新
         entity = payload.acting_entity
         if entity.has_component(DeadComponent):
             return
-        container = entity.get_component(StatusEffectContainerComponent)
-        if not container:
-            # 如果没有状态效果容器，也要确保派发完成事件以刷新UI
-            self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
-            return
-        # 结算中毒
-        poison_effects = [e for e in container.effects if e.effect_id.startswith("poison_")]
-        if poison_effects:
-            self._tick_poison_effects(entity, poison_effects, container)
-        # 结算其他
-        other_effects = [e for e in container.effects if not e.effect_id.startswith("poison_")]
-        self._tick_normal_effects(entity, other_effects, container)
-        # 派发结算完成事件（便于UI刷新）
+        
+        # 确保派发完成事件以刷新UI
         self.event_bus.dispatch(GameEvent(EventName.STATUS_EFFECTS_RESOLVED, StatusEffectsResolvedPayload()))
     
     def _tick_poison_effects(self, entity, poison_effects, container):
@@ -228,6 +293,35 @@ class StatusEffectSystem:
         else:
             # 回退到默认逻辑
             for effect in poison_effects:
+                effect.logic.on_tick(entity, effect, self.event_bus)
+    
+    def _tick_heal_effects(self, entity, heal_effects, container):
+        """结算持续恢复效果"""
+        if not heal_effects:
+            return
+            
+        # 使用HealOverTimeEffect处理持续恢复效果的结算
+        heal_logic = heal_effects[0].logic
+        if hasattr(heal_logic, 'tick_heal_effects'):
+            expired_heal_effects = heal_logic.tick_heal_effects(entity, heal_effects, self.event_bus)
+            
+            # 移除层数归0的持续恢复效果
+            for expired_effect in expired_heal_effects:
+                expired_effect.logic.on_remove(entity, expired_effect, self.event_bus)
+                container.effects.remove(expired_effect)
+            
+            # 一次性播报移除信息
+            if expired_heal_effects:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] {len(expired_heal_effects)} 个持续恢复状态层数归0，已移除")))
+                self.event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(f"**状态效果**: {entity.name} 的 {len(expired_heal_effects)} 个持续恢复状态层数归0，已移除")))
+            
+            # 播报剩余持续恢复状态信息
+            remaining_heal_effects = [e for e in heal_effects if e.stack_count > 0]
+            if remaining_heal_effects:
+                self.event_bus.dispatch(GameEvent(EventName.LOG_REQUEST, LogRequestPayload("[STATUS]", f"[{entity.name}] 剩余 {len(remaining_heal_effects)} 个持续恢复状态")))
+        else:
+            # 回退到默认逻辑
+            for effect in heal_effects:
                 effect.logic.on_tick(entity, effect, self.event_bus)
     
     def _tick_normal_effects(self, entity, effects, container):

@@ -24,8 +24,8 @@ tutorial_battlefield:
       #   # 未来扩展：特殊状态
       #   # status_effects: []
       #   # terrain_bonus: null
-      # 2:  # 位置ID 2
-      #   avatar: "mage"
+      2:  # 位置ID 2
+        avatar: "mage"
       # 3:  # 位置ID 3
       #   avatar: "warrior"
     
@@ -38,7 +38,7 @@ tutorial_battlefield:
     positions:
       4:
         enemy: "goblin_warrior"
-      # 5:
-      #   enemy: "goblin_warrior"
-      # 6:
-      #   enemy: "goblin_archer"
+      5:
+        enemy: "goblin_warrior"
+      6:
+        enemy: "goblin_archer"

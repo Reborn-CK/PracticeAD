@@ -74,6 +74,18 @@ fireball:
           affected_stat: "attack"  # 受攻击力影响
         - type: "apply_status_effect"
           status_effect_id: "burning_02"
+    - version_id: "fireball_03"
+      name: "高级火球术"
+      description: "高级火球术，攻击敌方全体，造成火焰伤害并可能造成燃烧。"
+      target: "all_enemies"  # 全体敌人目标
+      effects:
+        - type: "damage"
+          amount: 0
+          damage_type: "fire"
+          damage_percentage: 1.0  # 伤害百分比：100%攻击力
+          affected_stat: "attack"  # 受攻击力影响
+        - type: "apply_status_effect"
+          status_effect_id: "burning_02"
 
 # 毒云术
 poison_cloud:
@@ -188,8 +200,33 @@ heal:
         - type: "heal"
           amount: 20
           heal_type: "light"
+          heal_percentage: 0.1  # 治疗百分比：10%攻击力
+          affected_stat: "max_hp"  # 受治疗者最大生命影响
           overheal_to_shield:
             conversion_ratio: 0.5
+    - version_id: "heal_03"
+      name: "群体治疗术"
+      description: "群体治疗术，治疗我方全体，溢出治疗转化为护盾。"
+      target: "all_allies"  # 全体盟友目标
+      effects:
+        - type: "heal"
+          amount: 30
+          heal_type: "light"
+          heal_percentage: 0.1  # 治疗百分比：10%目标最大生命值
+          affected_stat: "target_max_hp"  # 受目标最大生命影响
+          overheal_to_shield:
+            conversion_ratio: 0.5
+    - version_id: "heal_04"
+      name: "持续恢复"
+      description: "持续恢复，每回合恢复生命值。"
+      effects:
+        - type: "heal"
+          amount: 10
+          heal_type: "light"
+          heal_percentage: 0.1  # 治疗百分比：10%目标最大生命值
+          affected_stat: "target_max_hp"  # 受目标最大生命影响
+        - type: "apply_status_effect"
+          status_effect_id: "continuous_heal_01"
 
 # 雷霆术
 thunderbolt:

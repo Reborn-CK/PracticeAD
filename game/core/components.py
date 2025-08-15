@@ -171,6 +171,8 @@ class StatsComponent:
     """统一管理角色属性的组件"""
     attack: float = 0.0  # 攻击力
     defense: float = 0.0  # 防御力
+    base_attack: float = 0.0  # 基础攻击力
+    base_defense: float = 0.0  # 基础防御力
 
 @dataclass
 class EquipmentComponent:

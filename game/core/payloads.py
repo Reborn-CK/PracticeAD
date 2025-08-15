@@ -86,6 +86,7 @@ class HealRequestPayload:
     source_spell_name: str
     base_heal: float
     heal_type: str
+    original_base_heal: Optional[float] = None
     can_be_modified: bool = True
 
     overheal_to_shield_config: Optional[dict] = None

@@ -163,6 +163,7 @@ class DataManager:
                         'stack_count': version.get('stack_count'),
                         'stack_intensity': version.get('stack_intensity'),
                         'poison_number': version.get('poison_number'),
+                        'heal_number': version.get('heal_number'),
                         'max_stacks': version.get('max_stacks'),
                         'context': version.get('context', {})
                     }

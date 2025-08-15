@@ -6,6 +6,7 @@ from ..core.payloads import StatQueryPayload, HealRequestPayload, UIMessagePaylo
 from ..core.entity import Entity
 from ..core.pipeline import EffectExecutionContext
 from .status_effect import StatusEffect
+from ..core.components import HealthComponent
 
 class EffectLogic(ABC):
     """buff，debuff的抽象基类"""
@@ -260,3 +261,112 @@ class StunEffectLogic(EffectLogic):
         event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
             f"**击晕**: {target.name} 从击晕状态中恢复！"
         )))
+
+class HealOverTimeEffect(EffectLogic):
+    """持续恢复效果逻辑，类似中毒效果"""
+    
+    def can_stack_with(self, existing_effect: StatusEffect, new_effect: StatusEffect) -> bool:
+        """持续恢复效果可以存在多个独立的状态"""
+        return False  # 持续恢复效果不堆叠，而是创建新的独立状态
+    
+    def handle_stacking(self, target: Entity, current_effect: StatusEffect, stack_num: int, event_bus: EventBus) -> bool:
+        """持续恢复效果堆叠，层数叠加"""
+        current_effect.stack_count = min(current_effect.stack_count + stack_num, current_effect.max_stacks)
+        return True
+    
+    def apply_heal_effects(self, target: Entity, new_effect: StatusEffect, existing_heal_effects: List[StatusEffect], event_bus: EventBus) -> int:
+        """
+        应用持续恢复效果的特殊逻辑
+        返回实际添加的持续恢复状态数量
+        """
+        heal_number = getattr(new_effect, 'heal_number', 1)  # 一次性添加的持续恢复状态数量
+        max_heal_effects = 10  # 最大持续恢复状态数量
+        
+        if len(existing_heal_effects) >= max_heal_effects:
+            # 如果已经有10个持续恢复状态，找到层数最低的一个进行叠加
+            min_stack_effect = min(existing_heal_effects, key=lambda e: e.stack_count)
+            old_stack_count = min_stack_effect.stack_count
+            min_stack_effect.stack_count = min(min_stack_effect.stack_count + new_effect.stack_intensity, new_effect.max_stacks)
+            added_stacks = min_stack_effect.stack_count - old_stack_count
+            event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**状态效果**: {target.name} 的 {new_effect.name} 效果增加了 {added_stacks} 层，现在总共 {min_stack_effect.stack_count} 层"
+            )))
+            return 0  # 没有添加新状态，只是叠加了层数
+        else:
+            # 添加新的持续恢复状态，根据heal_number决定添加几个
+            added_count = 0
+            for i in range(heal_number):
+                if len(existing_heal_effects) + added_count >= max_heal_effects:
+                    break  # 达到最大数量限制
+                
+                # 这里只是计算数量，实际创建在外部处理
+                added_count += 1
+            
+            total_heal_effects = len(existing_heal_effects) + added_count
+            event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**状态效果**: {target.name} 获得了 {added_count} 个 {new_effect.name} 效果，每个 x{new_effect.stack_count} 层，现在共有 {total_heal_effects} 个持续恢复状态"
+            )))
+            return added_count
+    
+    def tick_heal_effects(self, target: Entity, heal_effects: List[StatusEffect], event_bus: EventBus) -> List[StatusEffect]:
+        """
+        结算持续恢复效果的特殊逻辑
+        返回需要移除的持续恢复效果列表
+        """
+        # 计算总治疗量：每个持续恢复状态造成基础治疗，与层数无关
+        total_heal = 0
+        heal_type = "light"
+        heal_percentage = 0.1
+        affected_stat = "target_max_hp"
+        
+        for heal_effect in heal_effects:
+            heal_per_round = heal_effect.context.get("heal_per_round", 0)
+            total_heal += heal_per_round
+            heal_type = heal_effect.context.get("heal_type", heal_type)
+            heal_percentage = heal_effect.context.get("heal_percentage", heal_percentage)
+            affected_stat = heal_effect.context.get("affected_stat", affected_stat)
+        
+        # 如果有百分比加成，需要根据目标属性计算
+        if heal_percentage > 0:
+            if affected_stat == "target_max_hp":
+                health_comp = target.get_component(HealthComponent)
+                if health_comp:
+                    stat_value = health_comp.max_hp
+                    total_heal += stat_value * heal_percentage * len(heal_effects)  # 每个状态都享受百分比加成
+        
+        # 一次性播报所有持续恢复治疗
+        if total_heal > 0:
+            # 获取施法者名称，如果没有则显示"未知"
+            caster_name = heal_effects[0].caster.name if heal_effects[0].caster else "未知"
+            
+            event_bus.dispatch(GameEvent(EventName.UI_MESSAGE, UIMessagePayload(
+                f"**持续恢复**: {target.name} 因为 {caster_name} 施加的持续恢复 [{len(heal_effects)}个持续恢复状态] 恢复了 {total_heal:.1f} 点生命值"
+            )))
+            event_bus.dispatch(GameEvent(EventName.HEAL_REQUEST, HealRequestPayload(
+                caster=heal_effects[0].caster or target,
+                target=target,
+                source_spell_id="continuous_heal_01",
+                source_spell_name="持续恢复",
+                base_heal=total_heal,
+                heal_type=heal_type,
+                can_be_modified=True
+            )))
+        
+        # 持续恢复层数减1
+        for heal_effect in heal_effects:
+            heal_effect.stack_count -= 1
+        
+        # 返回层数归0的持续恢复效果
+        expired_heal_effects = [e for e in heal_effects if e.stack_count <= 0]
+        return expired_heal_effects
+    
+    def on_apply(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        """持续恢复效果的应用逻辑"""
+        pass  # 具体逻辑在apply_heal_effects中处理
+    
+    def on_tick(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        """持续恢复效果的结算逻辑"""
+        pass  # 具体逻辑在tick_heal_effects中处理
+    
+    def on_remove(self, target: Entity, effect: StatusEffect, event_bus: EventBus):
+        pass

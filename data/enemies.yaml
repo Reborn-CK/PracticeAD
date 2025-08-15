@@ -20,7 +20,7 @@ goblin_warrior:
     charge_per_spell: 8
     speed: 45
     shield: 0
-    attack: 35
+    attack: 15
     defense: 20
     crit_chance: 0.05
     crit_damage_multiplier: 1.5
@@ -51,8 +51,8 @@ goblin_archer:
   description: "使用弓箭的哥布林，擅长远程攻击"
   
   stats:
-    hp: 40
-    max_hp: 40
+    hp: 400
+    max_hp: 400
     mana: 150
     max_mana: 150
     energy: 3
@@ -63,7 +63,7 @@ goblin_archer:
     charge_per_spell: 10
     speed: 60
     shield: 0
-    attack: 30
+    attack: 20
     defense: 15
     crit_chance: 0.1
     crit_damage_multiplier: 2.0
@@ -84,7 +84,7 @@ goblin_archer:
     cloak: null
   
   spells:
-    - "normal_attack_01"
+    - "fireball_03"
   
 
 # 兽人狂战士 - 强力近战敌人

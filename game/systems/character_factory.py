@@ -80,13 +80,13 @@ class CharacterFactory:
         entity.add_component(InventoryComponent())
         
         # 装备预设的装备
-        self._equip_preset_equipment(entity, equipment_slots, entity_name)
+        self._equip_preset_equipment(entity, equipment_slots, template_id or entity_name)
         
         # 添加预设的物品
-        self._add_preset_items(entity, entity_name)
+        self._add_preset_items(entity, template_id or entity_name)
         
         # 更新装备属性
-        self._update_equipment_stats(entity, entity_name)
+        self._update_equipment_stats(entity, template_id or entity_name)
         
         # 根据类型添加控制组件
         if character_data['type'] == 'player':
@@ -250,8 +250,8 @@ class CharacterFactory:
             base_defense = character_data['stats'].get('defense', 0)
         
         # 保存基础属性到StatsComponent
-        stats_comp._base_attack = base_attack
-        stats_comp._base_defense = base_defense
+        stats_comp.base_attack = base_attack
+        stats_comp.base_defense = base_defense
         
         # 计算装备加成
         total_attack = base_attack

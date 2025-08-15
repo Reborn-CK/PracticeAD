@@ -27,11 +27,8 @@ class PlayerInputSystem:
     def on_action_request(self, event: GameEvent):
         actor = event.payload.acting_entity
         if actor.has_component(PlayerControlledComponent):
-            turn_manager = self.world.get_system(TurnManagerSystem)
-            if turn_manager and turn_manager.battle_turn_rule == BattleTurnRule.AP_BASED:
-                ui_system = self.world.get_system(UISystem)
-                if ui_system:
-                    ui_system.display_status_panel()
+            # 不在这里刷新UI，让状态效果结算完成后统一刷新
+            # 这样可以避免重复刷新AP UI
             
             # 显示主菜单
             self._show_main_menu(actor)
@@ -428,6 +425,14 @@ class PlayerInputSystem:
         elif target_type == "ally":
             available_targets = [e for e in self.world.entities if e.has_component(PlayerControlledComponent) and not e.has_component(DeadComponent)]
             target_descriptions = [get_desc(e) for e in available_targets]
+        elif target_type == "all_enemies":
+            # 全体敌人目标 - 显示所有敌人，但选择任意目标都会对所有敌人生效
+            available_targets = [e for e in self.world.entities if e.has_component(AIControlledComponent) and not e.has_component(DeadComponent)]
+            target_descriptions = [get_desc(e) + " (全体敌人)" for e in available_targets]
+        elif target_type == "all_allies":
+            # 全体盟友目标 - 显示所有盟友，但选择任意目标都会对所有盟友生效
+            available_targets = [e for e in self.world.entities if e.has_component(PlayerControlledComponent) and not e.has_component(DeadComponent)]
+            target_descriptions = [get_desc(e) + " (全体盟友)" for e in available_targets]
         else:
             available_targets = [e for e in self.world.entities if not e.has_component(DeadComponent)]
             target_descriptions = [get_desc(e) for e in available_targets]

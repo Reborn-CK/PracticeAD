@@ -47,10 +47,11 @@ hero:
   # 技能列表
   spells:
     - "normal_attack_01"
-    - "fireball_01"
-    - "energy_blast_02"
-    - "energy_shield_01"
-    - "energy_restore_01"
+    - "fireball_03"
+    - "poison_cloud_02"
+    - "poison_amplify_01"
+    - "heal_03"
+    - "heal_04"
   
   # 终极技能列表
   ultimate_spells:
@@ -95,6 +96,8 @@ mage:
   
   spells:
     - "fireball_02"
+    - "fireball_03"
+    - "heal_03"
     - "thunderbolt_01"
     - "heal_02"
     - "energy_restore_01"
@@ -240,6 +243,7 @@ priest:
   spells:
     - "heal_01"
     - "heal_02"
+    - "heal_03"
     - "blessing_stance_01"
     - "purify_01"
     - "energy_restore_01"

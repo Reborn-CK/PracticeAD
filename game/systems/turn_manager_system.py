@@ -1,3 +1,4 @@
+import time
 from ..core.event_bus import EventBus, GameEvent
 from ..core.enums import EventName, BattleTurnRule
 from ..core.payloads import RoundStartPayload, ActionRequestPayload, StatQueryPayload, ActionAfterActPayload, PostActionSettlementPayload
@@ -18,12 +19,16 @@ class TurnManagerSystem:
         self.ap_bars = {entity.name: 0 for entity in self.world.entities if not entity.has_component(DeadComponent)}
         self.is_waiting_for_action = False
         self.acting_entity = None
+        # 新增：支持多个角色同时行动
+        self.ready_entities = []  # 存储所有AP满的角色
+        self.acting_entities = []  # 存储正在行动的角色
         self.event_bus.subscribe(EventName.ACTION_AFTER_ACT, self.on_action_after_act)
 
 
     def update(self):
         if self.battle_turn_rule == BattleTurnRule.AP_BASED:
-            if self.is_waiting_for_action:
+            # 修改：检查是否有正在行动的角色
+            if self.acting_entities:
                 return
             self.update_ap_based()
         else:
@@ -65,6 +70,10 @@ class TurnManagerSystem:
             self.world.is_running = False
             return
 
+        # 暂停AP增加，等待所有正在行动的角色完成
+        if self.acting_entities:
+            return
+
         for entity in living_entities:
             if entity.name not in self.ap_bars:
                 self.ap_bars[entity.name] = 0
@@ -83,35 +92,60 @@ class TurnManagerSystem:
         if ready_entities:
             # 按AP值排序，如果AP值相等则按位置ID排序（位置ID小的先手）
             ready_entities.sort(key=lambda e: (self.ap_bars[e.name], -e.get_component(PositionComponent).position_id if e.get_component(PositionComponent) else 0), reverse=True)
-            self.acting_entity = ready_entities[0]
+            
+            # 修改：处理所有AP满的角色
+            self.ready_entities = ready_entities
+            self.acting_entities = ready_entities.copy()  # 复制一份作为正在行动的角色列表
             self.is_waiting_for_action = True
             
-            # 强制刷新UI以显示最新的AP值
+            # 只刷新一次UI，避免重复刷新
             from .ui_system import UISystem
             ui_system = self.world.get_system(UISystem)
             if ui_system:
                 ui_system.display_status_panel()
+                ui_system.last_refresh_time = time.time()  # 更新刷新时间戳
             
-            self.event_bus.dispatch(GameEvent(EventName.ACTION_REQUEST, ActionRequestPayload(self.acting_entity)))
+            # 为每个角色派发行动请求
+            for entity in ready_entities:
+                self.event_bus.dispatch(GameEvent(EventName.ACTION_REQUEST, ActionRequestPayload(entity)))
 
     def on_action_after_act(self, event: GameEvent):
         payload: ActionAfterActPayload = event.payload
-        if self.is_waiting_for_action and self.acting_entity and payload.acting_entity.name == self.acting_entity.name:
-            if self.acting_entity.name in self.ap_bars:
-                self.ap_bars[self.acting_entity.name] -= self.AP_THRESHOLD
+        acting_entity = payload.acting_entity
+        
+        # 检查是否是正在行动的角色之一
+        if acting_entity in self.acting_entities:
+            # 扣除AP值
+            if acting_entity.name in self.ap_bars:
+                self.ap_bars[acting_entity.name] -= self.AP_THRESHOLD
             
             # 恢复能量点
             if self.energy_system:
-                self.energy_system.restore_energy_at_turn_end(self.acting_entity)
+                self.energy_system.restore_energy_at_turn_end(acting_entity)
             
             # 派发行动后结算事件
-            self.event_bus.dispatch(GameEvent(EventName.POST_ACTION_SETTLEMENT, PostActionSettlementPayload(self.acting_entity)))
+            self.event_bus.dispatch(GameEvent(EventName.POST_ACTION_SETTLEMENT, PostActionSettlementPayload(acting_entity)))
             
-            self.acting_entity = None
-            self.is_waiting_for_action = False
+            # 从正在行动的角色列表中移除
+            self.acting_entities.remove(acting_entity)
+            
+            # 如果所有角色都行动完毕，重置状态
+            if not self.acting_entities:
+                self.is_waiting_for_action = False
+                self.ready_entities = []
+                
+                # 重置状态效果结算标志
+                from .status_effect_system import StatusEffectSystem
+                status_effect_system = self.world.get_system(StatusEffectSystem)
+                if status_effect_system:
+                    status_effect_system._status_effects_settled = False
 
     def set_battle_turn_rule(self, rule: BattleTurnRule):
         self.battle_turn_rule = rule
         self.round_number = 0
         self.turn_queue = []
         self.ap_bars = {entity.name: 0 for entity in self.world.entities if not entity.has_component(DeadComponent)}
+        # 重置多角色行动相关的状态
+        self.ready_entities = []
+        self.acting_entities = []
+        self.is_waiting_for_action = False
